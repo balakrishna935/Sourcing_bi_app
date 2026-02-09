@@ -5,11 +5,10 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:intl/intl.dart';
 import 'package:mukadam_bi/call_stack.dart';
-import 'package:mukadam_bi/plans/allPlansScreen.dart';
 import 'package:mukadam_bi/referral/user_referral_mukadam_screen.dart';
 import 'package:mukadam_bi/seeplan/plan_list_screen.dart';
 import 'package:mukadam_bi/seeplan/villages_list_screen.dart';
-import 'package:mukadam_bi/sms/sms_service.dart';
+
 
 import 'package:mukadam_bi/transport/Transport_provider/transport_provider_Screen.dart';
 import 'package:mukadam_bi/verifications/mukadam_dashboard/mukadam_dashborad.dart';
@@ -19,16 +18,16 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'AnalyticsDebugService.dart';
-import 'contacts/contact_service.dart';
+
 import 'dial_pad_screen.dart';
-import 'fetch call logs/call_log_service.dart';
+
 import 'firebase_message.dart';
 import 'getTransport/gettransportscreen.dart';
 
 import 'mukadan/authentication/screens/sendOtpScreen.dart';
 import 'mukadan/authentication/userProvider.dart';
 import 'mukadan/quick_registration/quick_registration_Screen.dart';
-import 'mukadan/registration/mukadam_registration_Screen.dart';
+
 import 'notes/end_Screen.dart';
 import 'notes/todo_screen.dart';
 import 'notes/visitApiService.dart';
@@ -68,7 +67,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
       const DialPadScreen(),
     ];
     _setupFCM();
-    _syncAllData();
+
     _initializeAnalytics();
   }
 
@@ -172,97 +171,8 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
    // ✅ Import your SmsService file
 
 // Then update _syncAllData() — replace the SMS section:
-  Future<void> _syncAllData() async {
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.phone,
-      Permission.contacts,
-      Permission.sms,
-    ].request();
-
-    // --- CALL LOGS ---
-    if (statuses[Permission.phone]!.isGranted) {
-      print('--- FETCHING CALL LOGS ---');
-      Iterable<CallLogEntry> entries = await CallLog.get();
-      if (entries.isEmpty) print('No call logs found on device.');
-      for (var entry in entries.take(5)) {
-        print('Call: ${entry.name} (${entry.number})');
-      }
-      await CallLogService().syncCallLogs(context);
-    } else {
-      print('Call Log Permission Denied');
-    }
-
-    // --- CONTACTS ---
-    if (statuses[Permission.contacts]!.isGranted) {
-      print('--- FETCHING CONTACTS ---');
-      bool contactPermission =
-      await FlutterContacts.requestPermission(readonly: true);
-      if (contactPermission) {
-        List<Contact> contacts =
-        await FlutterContacts.getContacts(withProperties: true);
-        if (contacts.isEmpty) {
-          print('No contacts found on this device.');
-        } else {
-          print('Found ${contacts.length} contacts. Printing first 5:');
-          for (var contact in contacts.take(5)) {
-            print(
-                'Contact: ${contact.displayName} - ${contact.phones.firstOrNull?.number}');
-          }
-          await ContactService().syncContacts(context);
-        }
-      } else {
-        print('FlutterContacts plugin internal permission denied.');
-      }
-    }
-
-    // --- SMS --- ✅ UPDATED: now calls SmsService to sync
-    if (statuses[Permission.sms]!.isGranted) {
-      print('--- FETCHING & SYNCING SMS MESSAGES ---');
-      SmsQuery query = SmsQuery();
-      List<SmsMessage> messages = await query.getAllSms;
-      if (messages.isEmpty) {
-        print('No SMS found on device.');
-      } else {
-        for (var msg in messages.take(5)) {
-          String body = msg.body ?? "";
-          String preview =
-          body.length > 20 ? "${body.substring(0, 20)}..." : body;
-          print('SMS from ${msg.address}: $preview');
-        }
-        // ✅ Actually sync SMS to your backend
-        await SmsService().syncSms(context);
-        print('SMS synced to server successfully.');
-      }
-    } else {
-      print('SMS Permission Denied');
-    }
-
-    print("--- ALL DATA SYNC PROCESSES COMPLETED ---");
-  }
 
 
-  Future<void> _checkAndFetchCallLogs() async {
-    PermissionStatus status = await Permission.phone.request();
-
-    if (status.isGranted) {
-      Iterable<CallLogEntry> entries = await CallLog.get();
-      print('--- CALL LOG DATA FETCHED ---');
-      for (CallLogEntry entry in entries) {
-        print('Name: ${entry.name}');
-        print('Number: ${entry.number}');
-        print('Type: ${entry.callType}');
-        print('Duration: ${entry.duration} sec');
-        print('Date: ${DateTime.fromMillisecondsSinceEpoch(entry.timestamp!)}');
-        print('-------------------------------');
-      }
-      await CallLogService().syncCallLogs(context);
-    } else if (status.isDenied) {
-      print('Call log permission was denied by the user.');
-    } else if (status.isPermanentlyDenied) {
-      print('Permission permanently denied. Opening settings...');
-      openAppSettings();
-    }
-  }
 
   Future<void> _handleLogout() async {
     bool? confirm = await showDialog<bool>(

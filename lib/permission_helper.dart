@@ -4,8 +4,7 @@ class PermissionHelper {
   static Future<void> requestAllPermissions() async {
     await [
       Permission.phone,
-      Permission.contacts,
-      Permission.sms,
+
     ].request();
   }
 }

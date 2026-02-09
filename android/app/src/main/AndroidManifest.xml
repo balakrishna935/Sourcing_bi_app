@@ -6,52 +6,41 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-
-
-    <!-- Camera Permission -->
+    <!-- Camera Permission (for taking photos) -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- Foreground Service Permissions (Required for Android 14+) -->
+    <!-- Foreground Service Permissions (location only) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
-    <!-- Data Sync Features -->
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- Force-remove permissions that plugins may auto-add -->
 
-    <!-- Media Permissions (Android 13+ / API 33+) -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove" />
 
-    <!-- Storage Permissions (Android 12 and below fallback) -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-
-    <!-- Camera hardware feature (optional so app installs on all devices) -->
+    <!-- Camera hardware feature (optional) -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
         android:label="BI_Supply_v5_09_02"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:icon="@mipmap/ic_launcher">
+
+        <!-- ✅ Removed: android:usesCleartextTraffic="true" -->
+        <!-- If you need HTTP for specific domains, use networkSecurityConfig -->
 
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
-            android:foregroundServiceType="location|microphone"
+            android:foregroundServiceType="location"
             android:stopWithTask="false"
             android:exported="false"
             android:directBootAware="true"
             tools:replace="android:exported" />
+        <!-- ✅ Changed: "location|microphone" → "location" only -->
 
         <activity
             android:name=".MainActivity"
@@ -73,23 +62,14 @@
             </intent-filter>
         </activity>
 
-        <meta-data
-            android:name="flutterEmbedding"
-            android:value="2" />
-
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
+        <meta-data android:name="flutterEmbedding" android:value="2" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="location_tracking_channel_v9" />
-
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_icon"
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@mipmap/ic_launcher" />
-
-        <meta-data
-            android:name="firebase_analytics_collection_deactivated"
+        <meta-data android:name="firebase_analytics_collection_deactivated"
             android:value="false" />
-        <meta-data
-            android:name="firebase_performance_collection_deactivated"
+        <meta-data android:name="firebase_performance_collection_deactivated"
             android:value="true" />
 
     </application>

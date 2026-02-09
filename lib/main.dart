@@ -17,7 +17,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'mukadam_Screen.dart';
 import 'mukadan/authentication/auth_service/auth_service.dart';
 import 'mukadan/authentication/userProvider.dart';
-import 'mukadan/registration/mukadam_registration_Screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -41,46 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDys7WMNluTha7LnKDbZNOzYpUadrhSa-w',
-    appId: '1:1001525307280:web:b5d359d79a5116da923515',
-    messagingSenderId: '1001525307280',
-    projectId: 'mukkadam-d4733',
-    authDomain: 'mukkadam-d4733.firebaseapp.com',
-    storageBucket: 'mukkadam-d4733.firebasestorage.app',
+    apiKey: 'AIzaSyBBAk5VVsj5h646OX_RPZhd3vLkLZhSFwc',
+    appId: '1:804539744779:web:9c37ce09fa2c2db2ed7d0e',
+    messagingSenderId: '804539744779',
+    projectId: 'bisupply-14108',
+    authDomain: 'bisupply-14108.firebaseapp.com',
+    storageBucket: 'bisupply-14108.firebasestorage.app',
+    measurementId: 'G-YCJHR5DNCX',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCOKCsvNePFjCTSHyI1DgbMvFA0P1nbCb8',
-    appId: '1:1001525307280:android:eb6a5fa5d79a87fb923515',
-    messagingSenderId: '1001525307280',
-    projectId: 'mukkadam-d4733',
-    storageBucket: 'mukkadam-d4733.firebasestorage.app',
+    apiKey: 'AIzaSyDJxP_r038n_Vk1JwLu-230QKg8Cqf3pAo',
+    appId: '1:804539744779:android:67f094d5ee50f48eed7d0e',
+    messagingSenderId: '804539744779',
+    projectId: 'bisupply-14108',
+    storageBucket: 'bisupply-14108.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDO2mZXiYCOWIPnn1u1ge16DM4mQJYr1NI',
-    appId: '1:1001525307280:ios:b62260e0ee929ef2923515',
-    messagingSenderId: '1001525307280',
-    projectId: 'mukkadam-d4733',
-    storageBucket: 'mukkadam-d4733.firebasestorage.app',
+    apiKey: 'AIzaSyAO9Qkbfq4MgRv2s-dFerjKp2C3d-wTnIs',
+    appId: '1:804539744779:ios:9d262bdd5d8a682ced7d0e',
+    messagingSenderId: '804539744779',
+    projectId: 'bisupply-14108',
+    storageBucket: 'bisupply-14108.firebasestorage.app',
     iosBundleId: 'com.example.mukadamBi',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDO2mZXiYCOWIPnn1u1ge16DM4mQJYr1NI',
-    appId: '1:1001525307280:ios:b62260e0ee929ef2923515',
-    messagingSenderId: '1001525307280',
-    projectId: 'mukkadam-d4733',
-    storageBucket: 'mukkadam-d4733.firebasestorage.app',
+    apiKey: 'AIzaSyAO9Qkbfq4MgRv2s-dFerjKp2C3d-wTnIs',
+    appId: '1:804539744779:ios:9d262bdd5d8a682ced7d0e',
+    messagingSenderId: '804539744779',
+    projectId: 'bisupply-14108',
+    storageBucket: 'bisupply-14108.firebasestorage.app',
     iosBundleId: 'com.example.mukadamBi',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDys7WMNluTha7LnKDbZNOzYpUadrhSa-w',
-    appId: '1:1001525307280:web:f2ec9412e30fbd36923515',
-    messagingSenderId: '1001525307280',
-    projectId: 'mukkadam-d4733',
-    authDomain: 'mukkadam-d4733.firebaseapp.com',
-    storageBucket: 'mukkadam-d4733.firebasestorage.app',
+    apiKey: 'AIzaSyBBAk5VVsj5h646OX_RPZhd3vLkLZhSFwc',
+    appId: '1:804539744779:web:0b135deb24fc452eed7d0e',
+    messagingSenderId: '804539744779',
+    projectId: 'bisupply-14108',
+    authDomain: 'bisupply-14108.firebaseapp.com',
+    storageBucket: 'bisupply-14108.firebasestorage.app',
+    measurementId: 'G-231K794RHL',
   );
+
 }

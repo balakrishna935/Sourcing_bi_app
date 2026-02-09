@@ -1,8 +1,6 @@
 import 'package:call_log/call_log.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:intl/intl.dart';
 import 'package:mukadam_bi/call_stack.dart';
 import 'package:mukadam_bi/referral/user_referral_mukadam_screen.dart';

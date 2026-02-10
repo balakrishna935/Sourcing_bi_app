@@ -96,8 +96,9 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
   Future<void> _initiateCall() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final String userMobile = userProvider.user?.mobileNumber ?? "";
+    final String userId=userProvider.user?.id.toString() ?? 'unknown';
 
-    await AnalyticsDebugService.logDebugEvent('central_team_number', params: {
+    await AnalyticsDebugService.logDebugEvent('central_team_number ${userId}', params: {
       'user_id': userProvider.user?.id ?? 'unknown',
       'user_mobile': userMobile,
       'time': DateTime.now().toIso8601String(),
@@ -339,7 +340,9 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
     if (confirm == true) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      await AnalyticsDebugService.logDebugEvent('user_logout', params: {
+      final String userId=userProvider.user?.id.toString() ?? 'unknown';
+
+      await AnalyticsDebugService.logDebugEvent('user_logout ${userId}', params: {
         'user_id': userProvider.user?.id ?? 'unknown',
         'username': userProvider.user?.username ?? 'unknown',
         'logout_time': DateTime.now().toIso8601String(),
@@ -361,8 +364,9 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
   void _onItemTapped(int index) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     String tabName = index == 0 ? "Home" : "Create Plan";
+    final String userId=userProvider.user?.id.toString() ?? 'unknown';
 
-    AnalyticsDebugService.logDebugEvent('bottom_navigation_click', params: {
+    AnalyticsDebugService.logDebugEvent('Dial_Pad ${userId}', params: {
       'user_id': userProvider.user?.id ?? 'unknown',
       'tab_index': index,
       'tab_name': tabName,
@@ -418,8 +422,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
     );
   }
 
-  Widget _buildCallFAB() {
-    return Container(
+  Widget _buildCallFAB() {    return Container(
       height: 60,
       width: 60,
       decoration: BoxDecoration(
@@ -518,7 +521,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
         String validEventName = title
             .replaceAll('\n', '_')
             .replaceAll(' ', '_')
-            .toLowerCase();
+            .toLowerCase() + (userProvider.user?.id.toString() ?? 'unknown');
 
         await AnalyticsDebugService.logDebugEvent(validEventName, params: {
           'user_id': userProvider.user?.id ?? 'unknown',
@@ -568,7 +571,10 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
   Widget _buildWideCard(String title, String subtitle, IconData icon, Widget destination) {
     return GestureDetector(
       onTap: () async {
-        await AnalyticsDebugService.logDebugEvent('dashboard_wide_card_click', params: {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+        final String userId=userProvider.user?.id.toString() ?? 'unknown';
+        await AnalyticsDebugService.logDebugEvent('dashboard_wide_card_click ${userId}', params: {
           'card_title': title,
           'subtitle': subtitle,
           'destination_screen': destination.runtimeType.toString(),

@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'package:call_log/call_log.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +44,9 @@ class CallLogModel {
 
 class CallLogService {
   //static const String baseUrl = "https://furtive-chrissy-reparably.ngrok-free.dev";
-  static const String baseUrl = 'https://supply.bharatintelligence.ai';
+  //static const String baseUrl = 'https://supply.bharatintelligence.ai';
+
+  static String? baseUrl =dotenv.env['DEPLOYED_URL'];
 
   Future<void> syncCallLogs(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);

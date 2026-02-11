@@ -1,5 +1,8 @@
+// lib/seeplan/plan_service.dart
+
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:mukadam_bi/seeplan/plan_service_model.dart';
 import 'package:path/path.dart' as p;
@@ -7,10 +10,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http_parser/http_parser.dart';
 
 class PlanService {
-  //static const String baseUrl = 'https://furtive-chrissy-reparably.ngrok-free.dev/api';
-  static const String baseUrl = 'https://supply.bharatintelligence.ai/api';
-  static const String s3FileUploadUrl = 'https://demand.bharatintelligence.ai/chat/api/upload_image_to_s3/';
-  static const String s3AuthToken = 'e8fa8310c9af344ca22ec6bd23960d609b09c704';
+  // All config read from .env — no hardcoded secrets
+  static String get baseUrl => '${dotenv.env['DEPLOYED_URL']}/api';
+  static String get s3FileUploadUrl =>
+      '${dotenv.env['S3_UPLOAD_BASE_URL']}/chat/api/upload_image_to_s3/';
+  static String get s3AuthToken => dotenv.env['S3_UPDATED_TOKEN'] ?? '';
 
   /// Fetch all village visit plans for the logged-in user
   Future<List<VillageVisitPlan>> fetchVisitPlans({
@@ -24,7 +28,6 @@ class PlanService {
 
     if (userId == null) throw Exception("User ID not found");
 
-    // Build query parameters
     Map<String, String> queryParams = {'user_id': userId.toString()};
 
     if (status != null && status.isNotEmpty && status != 'all') {
@@ -37,7 +40,8 @@ class PlanService {
       queryParams['date_to'] = dateTo;
     }
 
-    final uri = Uri.parse('$baseUrl/village-visit-plans/').replace(queryParameters: queryParams);
+    final uri = Uri.parse('$baseUrl/village-visit-plans/')
+        .replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(
@@ -75,7 +79,8 @@ class PlanService {
   }
 
   /// Fetch plans within date range
-  Future<List<VillageVisitPlan>> fetchPlansByDateRange(String dateFrom, String dateTo) async {
+  Future<List<VillageVisitPlan>> fetchPlansByDateRange(
+      String dateFrom, String dateTo) async {
     return fetchVisitPlans(dateFrom: dateFrom, dateTo: dateTo);
   }
 
@@ -93,7 +98,8 @@ class PlanService {
       queryParams['status'] = status;
     }
 
-    final uri = Uri.parse('$baseUrl/village-visits/').replace(queryParameters: queryParams);
+    final uri = Uri.parse('$baseUrl/village-visits/')
+        .replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(
@@ -108,7 +114,8 @@ class PlanService {
         List<dynamic> data = json.decode(response.body);
         return data.map((json) => VillageVisit.fromJson(json)).toList();
       } else {
-        throw Exception("Failed to load village visits: ${response.statusCode}");
+        throw Exception(
+            "Failed to load village visits: ${response.statusCode}");
       }
     } catch (e) {
       throw Exception("Error fetching village visits: $e");
@@ -116,11 +123,13 @@ class PlanService {
   }
 
   /// Fetch execution data for a specific village visit
-  Future<VillageExecution?> fetchVillageExecution(String villageVisitId) async {
+  Future<VillageExecution?> fetchVillageExecution(
+      String villageVisitId) async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('session_token');
 
-    final url = Uri.parse('$baseUrl/village-visits/$villageVisitId/execution/');
+    final url =
+    Uri.parse('$baseUrl/village-visits/$villageVisitId/execution/');
 
     try {
       final response = await http.get(
@@ -136,7 +145,8 @@ class PlanService {
       } else if (response.statusCode == 404) {
         return null;
       } else {
-        debugPrint("Error fetching execution: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "Error fetching execution: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -155,13 +165,12 @@ class PlanService {
 
     request.headers['Authorization'] = 'Token $s3AuthToken';
 
-    String extension = p.extension(filePath).substring(1).toLowerCase();
-    String mediaType = 'image';
+    String extension = p.extension(filePath).isNotEmpty
+        ? p.extension(filePath).substring(1).toLowerCase()
+        : 'jpg';
     if (['jpg', 'jpeg'].contains(extension)) {
       extension = 'jpeg';
-    } else if (extension == 'png') {
-      extension = 'png';
-    } else {
+    } else if (extension != 'png') {
       extension = 'jpeg';
     }
 
@@ -170,7 +179,7 @@ class PlanService {
         'image',
         filePath,
         filename: p.basename(filePath),
-        contentType: MediaType(mediaType, extension),
+        contentType: MediaType('image', extension),
       ),
     );
 
@@ -185,7 +194,8 @@ class PlanService {
         debugPrint('S3 Upload successful. Key: ${responseBody['s3_key']}');
         return responseBody['s3_key'];
       } else {
-        debugPrint('S3 Upload failed: ${response.statusCode} - ${response.body}');
+        debugPrint(
+            'S3 Upload failed: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
@@ -200,7 +210,8 @@ class PlanService {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('session_token');
 
-    final url = Uri.parse('$baseUrl/village-visits/$villageVisitId/start_execution/');
+    final url = Uri.parse(
+        '$baseUrl/village-visits/$villageVisitId/start_execution/');
 
     try {
       final response = await http.post(
@@ -218,7 +229,8 @@ class PlanService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
-        debugPrint("API Error: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "API Error: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -228,7 +240,8 @@ class PlanService {
   }
 
   /// Submit meeting record
-  Future<Map<String, dynamic>?> submitMeetingRecord(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>?> submitMeetingRecord(
+      Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('session_token');
     final url = Uri.parse('$baseUrl/meeting-records/');
@@ -248,7 +261,8 @@ class PlanService {
         debugPrint("Meeting record submitted: ${result['id']}");
         return result;
       } else {
-        debugPrint("API Error: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "API Error: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -258,7 +272,8 @@ class PlanService {
   }
 
   /// Upload proof image metadata
-  Future<Map<String, dynamic>?> uploadProofImage(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>?> uploadProofImage(
+      Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('session_token');
     final url = Uri.parse('$baseUrl/proof-images/');
@@ -278,7 +293,8 @@ class PlanService {
         debugPrint("Proof image uploaded: ${result['data']?['id']}");
         return result;
       } else {
-        debugPrint("API Error: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "API Error: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -289,11 +305,13 @@ class PlanService {
 
   /// Complete village execution
   Future<Map<String, dynamic>?> completeVillageExecution(
-      String villageVisitId, double latitude, double longitude, {String? feedback}) async {
+      String villageVisitId, double latitude, double longitude,
+      {String? feedback}) async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('session_token');
 
-    final url = Uri.parse('$baseUrl/village-visits/$villageVisitId/complete_execution/');
+    final url = Uri.parse(
+        '$baseUrl/village-visits/$villageVisitId/complete_execution/');
 
     try {
       final response = await http.post(
@@ -312,7 +330,8 @@ class PlanService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
-        debugPrint("API Error: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "API Error: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {

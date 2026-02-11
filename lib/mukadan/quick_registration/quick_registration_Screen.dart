@@ -128,7 +128,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
 
 
   Future<void> _loadRateCardImage() async {
-    final imageBytes = await quickRegistrationService().fetchRateCardImage();
+    final imageBytes = await QuickRegistrationService().fetchRateCardImage();
     if (mounted && imageBytes != null) {
       setState(() {
         _rateCardImageBytes = imageBytes;
@@ -797,7 +797,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
       }
 
       // Call the service with file paths
-      final response = await quickRegistrationService().quickRegisterMukkadam(
+      final response = await QuickRegistrationService().quickRegisterMukkadam(
         mukkadamData: mukkadamData,
         profilePhotoPath: _profilePhoto?.path,
         aadharCardPath: _aadharCardPhoto?.path,

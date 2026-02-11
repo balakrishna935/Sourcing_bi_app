@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +8,8 @@ import '../mukadan/authentication/userProvider.dart';
 
 class ContactService {
   //static const String baseUrl = "https://furtive-chrissy-reparably.ngrok-free.dev";
-  static const String baseUrl = 'https://supply.bharatintelligence.ai';
-
+  //static const String baseUrl = 'https://supply.bharatintelligence.ai';
+  static String? baseUrl =dotenv.env['DEPLOYED_URL'];
   Future<void> syncContacts(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final String? userId = userProvider.user?.id.toString();

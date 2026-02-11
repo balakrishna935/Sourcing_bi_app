@@ -3,17 +3,18 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
 import 'package:http_parser/http_parser.dart';
 
 class ExecutionService {
-  //static const String baseUrl = 'https://furtive-chrissy-reparably.ngrok-free.dev/api';
-
-  static const String baseUrl = 'https://supply.bharatintelligence.ai/api';
-  static const String s3FileUploadUrl = 'https://demand.bharatintelligence.ai/chat/api/upload_image_to_s3/';
-  static const String s3AuthToken = 'e8fa8310c9af344ca22ec6bd23960d609b09c704';
+  // Read all config from .env — no hardcoded secrets
+  static String get baseUrl => '${dotenv.env['DEPLOYED_URL']}/api';
+  static String get s3FileUploadUrl =>
+      '${dotenv.env['API_BASE_URL']}/chat/api/upload_image_to_s3/';
+  static String get s3AuthToken => dotenv.env['S3_UPDATED_TOKEN'] ?? '';
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -30,7 +31,8 @@ class ExecutionService {
   }
 
   /// Fetch village visit details with execution data
-  Future<Map<String, dynamic>?> fetchVillageVisitDetails(String villageVisitId) async {
+  Future<Map<String, dynamic>?> fetchVillageVisitDetails(
+      String villageVisitId) async {
     final token = await _getToken();
     final url = Uri.parse('$baseUrl/village-visits/$villageVisitId/');
 
@@ -47,7 +49,8 @@ class ExecutionService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        debugPrint("Error fetching village details: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "Error fetching village details: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -60,7 +63,8 @@ class ExecutionService {
   Future<Map<String, dynamic>?> startVillageExecution(
       String villageVisitId, double latitude, double longitude) async {
     final token = await _getToken();
-    final url = Uri.parse('$baseUrl/village-visits/$villageVisitId/start_execution/');
+    final url = Uri.parse(
+        '$baseUrl/village-visits/$villageVisitId/start_execution/');
 
     try {
       final response = await http.post(
@@ -79,7 +83,8 @@ class ExecutionService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
-        debugPrint("API Error starting execution: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "API Error starting execution: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -111,15 +116,23 @@ class ExecutionService {
     };
 
     if (personMet) {
-      if (personName != null && personName.isNotEmpty) data["person_name"] = personName;
-      if (personPhone != null && personPhone.isNotEmpty) data["person_phone"] = personPhone;
-      if (personDesignation != null && personDesignation.isNotEmpty) data["person_designation"] = personDesignation;
-      if (meetingNotes != null && meetingNotes.isNotEmpty) data["meeting_notes"] = meetingNotes;
-      if (meetingLatitude != null) data["meeting_latitude"] = _limitDecimals(meetingLatitude);
-      if (meetingLongitude != null) data["meeting_longitude"] = _limitDecimals(meetingLongitude);
+      if (personName != null && personName.isNotEmpty)
+        data["person_name"] = personName;
+      if (personPhone != null && personPhone.isNotEmpty)
+        data["person_phone"] = personPhone;
+      if (personDesignation != null && personDesignation.isNotEmpty)
+        data["person_designation"] = personDesignation;
+      if (meetingNotes != null && meetingNotes.isNotEmpty)
+        data["meeting_notes"] = meetingNotes;
+      if (meetingLatitude != null)
+        data["meeting_latitude"] = _limitDecimals(meetingLatitude);
+      if (meetingLongitude != null)
+        data["meeting_longitude"] = _limitDecimals(meetingLongitude);
     } else {
-      if (personDesignation != null && personDesignation.isNotEmpty) data["person_designation"] = personDesignation;
-      if (reasonNotMet != null && reasonNotMet.isNotEmpty) data["reason_not_met"] = reasonNotMet;
+      if (personDesignation != null && personDesignation.isNotEmpty)
+        data["person_designation"] = personDesignation;
+      if (reasonNotMet != null && reasonNotMet.isNotEmpty)
+        data["reason_not_met"] = reasonNotMet;
     }
 
     debugPrint("📤 Submitting meeting record: ${jsonEncode(data)}");
@@ -146,7 +159,8 @@ class ExecutionService {
         debugPrint("Meeting record submitted: ${result['id']}");
         return result;
       } else {
-        debugPrint("API Error submitting meeting: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "API Error submitting meeting: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -168,12 +182,9 @@ class ExecutionService {
     String extension = p.extension(filePath).isNotEmpty
         ? p.extension(filePath).substring(1).toLowerCase()
         : 'jpg';
-    String mediaType = 'image';
     if (['jpg', 'jpeg'].contains(extension)) {
       extension = 'jpeg';
-    } else if (extension == 'png') {
-      extension = 'png';
-    } else {
+    } else if (extension != 'png') {
       extension = 'jpeg';
     }
 
@@ -182,7 +193,7 @@ class ExecutionService {
         'image',
         filePath,
         filename: p.basename(filePath),
-        contentType: MediaType(mediaType, extension),
+        contentType: MediaType('image', extension),
       ),
     );
 
@@ -197,7 +208,8 @@ class ExecutionService {
         debugPrint('S3 Upload successful. Key: ${responseBody['s3_key']}');
         return responseBody['s3_key'];
       } else {
-        debugPrint('S3 Upload failed: ${response.statusCode} - ${response.body}');
+        debugPrint(
+            'S3 Upload failed: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
@@ -220,7 +232,6 @@ class ExecutionService {
         ? p.extension(filePath).substring(1).toLowerCase()
         : 'm4a';
 
-    // Determine MIME subtype for audio
     String mimeSubtype;
     switch (extension) {
       case 'm4a':
@@ -244,7 +255,7 @@ class ExecutionService {
 
     request.files.add(
       await http.MultipartFile.fromPath(
-        'image', // API field name (same endpoint)
+        'image',
         filePath,
         filename: p.basename(filePath),
         contentType: MediaType('audio', mimeSubtype),
@@ -259,10 +270,12 @@ class ExecutionService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseBody = jsonDecode(response.body);
-        debugPrint('🎵 S3 Audio Upload successful. Key: ${responseBody['s3_key']}');
+        debugPrint(
+            '🎵 S3 Audio Upload successful. Key: ${responseBody['s3_key']}');
         return responseBody['s3_key'];
       } else {
-        debugPrint('S3 Audio Upload failed: ${response.statusCode} - ${response.body}');
+        debugPrint(
+            'S3 Audio Upload failed: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
@@ -317,7 +330,8 @@ class ExecutionService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
-        debugPrint("API Error uploading proof metadata: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "API Error uploading proof metadata: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -342,9 +356,11 @@ class ExecutionService {
     final extension = p.extension(filePath).isNotEmpty
         ? p.extension(filePath).substring(1)
         : 'jpg';
-    final s3ObjectName = 'village-visit-proofs/$userId/$executionId/$personType/${timestamp}_$personType.$extension';
+    final s3ObjectName =
+        'village-visit-proofs/$userId/$executionId/$personType/${timestamp}_$personType.$extension';
 
-    final s3Key = await uploadFileToS3(filePath: filePath, s3ObjectName: s3ObjectName);
+    final s3Key =
+    await uploadFileToS3(filePath: filePath, s3ObjectName: s3ObjectName);
     if (s3Key == null) {
       debugPrint("Failed to upload to S3");
       return null;
@@ -368,7 +384,7 @@ class ExecutionService {
     );
   }
 
-  /// Complete village execution — now accepts s3AudioKeys
+  /// Complete village execution — accepts s3AudioKeys
   Future<Map<String, dynamic>?> completeVillageExecution(
       String villageVisitId, {
         required double latitude,
@@ -378,7 +394,8 @@ class ExecutionService {
         List<String>? s3AudioKeys,
       }) async {
     final token = await _getToken();
-    final url = Uri.parse('$baseUrl/village-visits/$villageVisitId/complete_execution/');
+    final url = Uri.parse(
+        '$baseUrl/village-visits/$villageVisitId/complete_execution/');
 
     Map<String, dynamic> data = {
       "latitude": _limitDecimals(latitude),
@@ -391,8 +408,6 @@ class ExecutionService {
     if (totalRegistrations != null) {
       data["total_registrations"] = totalRegistrations;
     }
-    // Include audio S3 keys as an array
-
 
     try {
       final response = await http.post(
@@ -408,9 +423,8 @@ class ExecutionService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
-        print(response.body);
-        print(data);
-        debugPrint("API Error completing execution: ${response.statusCode} - ${response.body}");
+        debugPrint(
+            "API Error completing execution: ${response.statusCode} - ${response.body}");
         return null;
       }
     } catch (e) {
@@ -428,7 +442,6 @@ class ExecutionService {
     final today = DateTime.now();
     final dateStr =
         "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-    // date_from = 30 days ago, date_to = today
     final dateFrom = today.subtract(const Duration(days: 30));
     final dateFromStr =
         "${dateFrom.year}-${dateFrom.month.toString().padLeft(2, '0')}-${dateFrom.day.toString().padLeft(2, '0')}";
@@ -448,8 +461,8 @@ class ExecutionService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> dailyCounts = data['daily_mukkadam_counts'] ?? [];
-        // Find today's entry
+        final List<dynamic> dailyCounts =
+            data['daily_mukkadam_counts'] ?? [];
         for (var entry in dailyCounts) {
           if (entry['date'] == dateStr) {
             return entry['count'] ?? 0;
@@ -465,8 +478,4 @@ class ExecutionService {
       return 0;
     }
   }
-
-
-
-
 }

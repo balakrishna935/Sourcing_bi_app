@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
@@ -6,25 +8,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mukadam_bi/transport/Transport_provider/transport_model.dart';
 
 class TransportProviderService {
-  //static const String _baseUrl = "https://furtive-chrissy-reparably.ngrok-free.dev";
-  static const String _baseUrl='https://supply.bharatintelligence.ai';
-  static const String _s3FileUploadUrl = 'https://demand.bharatintelligence.ai/chat/api/upload_image_to_s3/';
-
-  // Specific S3 Auth Token added here
-  static const String _s3AuthToken = 'e8fa8310c9af344ca22ec6bd23960d609b09c704';
+  // All config read from .env — no hardcoded secrets
+  static String get _baseUrl => dotenv.env['DEPLOYED_URL'] ?? '';
+  static String get _s3FileUploadUrl =>
+      '${dotenv.env['S3_UPLOAD_BASE_URL']}/chat/api/upload_image_to_s3/';
+  static String get _s3AuthToken => dotenv.env['S3_UPDATED_TOKEN'] ?? '';
 
   Future<String?> _uploadFileToS3({
     required String filePath,
     required String s3ObjectName,
-    required String authToken,
   }) async {
     final uri = Uri.parse(_s3FileUploadUrl);
     final request = http.MultipartRequest('POST', uri);
 
-    // Using the token passed to the method
-    request.headers['Authorization'] = 'Token $authToken';
+    request.headers['Authorization'] = 'Token $_s3AuthToken';
 
     String extension = p.extension(filePath).replaceFirst('.', '');
+    if (extension.isEmpty) extension = 'jpeg';
     if (extension == 'jpg') extension = 'jpeg';
 
     request.files.add(
@@ -43,15 +43,16 @@ class TransportProviderService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseBody = jsonDecode(response.body);
-        print('S3 Response Body: $responseBody');
-        final String? key = responseBody['s3_key'] ?? responseBody['key'] ?? responseBody['path'];
+        debugPrint('S3 Response Body: $responseBody');
+        final String? key =
+            responseBody['s3_key'] ?? responseBody['key'] ?? responseBody['path'];
         return key;
       } else {
-        print('S3 Upload Failed: ${response.statusCode} - ${response.body}');
+        debugPrint('S3 Upload Failed: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Error uploading to S3: $e');
+      debugPrint('Error uploading to S3: $e');
       return null;
     }
   }
@@ -69,52 +70,52 @@ class TransportProviderService {
     final String? sessionToken = prefs.getString('session_token');
     if (sessionToken == null) throw Exception("Session token not found");
 
-    final String cleanMobile = provider.contactNumber?.replaceAll(RegExp(r'\D'), '') ?? 'unknown';
+    final String cleanMobile =
+        provider.contactNumber?.replaceAll(RegExp(r'\D'), '') ?? 'unknown';
     final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
 
     String? profileKey, aadharKey, panKey, voterKey, dlKey, rcKey;
 
-    // All S3 uploads now use the specific _s3AuthToken
     if (profilePath != null && profilePath.isNotEmpty) {
       profileKey = await _uploadFileToS3(
         filePath: profilePath,
-        s3ObjectName: 'transport/profilephoto/$cleanMobile/profile_$timestamp${p.extension(profilePath)}',
-        authToken: _s3AuthToken,
+        s3ObjectName:
+        'transport/profilephoto/$cleanMobile/profile_$timestamp${p.extension(profilePath)}',
       );
     }
     if (aadharPath != null && aadharPath.isNotEmpty) {
       aadharKey = await _uploadFileToS3(
         filePath: aadharPath,
-        s3ObjectName: 'transport/aadharcard/$cleanMobile/aadhar_$timestamp${p.extension(aadharPath)}',
-        authToken: _s3AuthToken,
+        s3ObjectName:
+        'transport/aadharcard/$cleanMobile/aadhar_$timestamp${p.extension(aadharPath)}',
       );
     }
     if (panPath != null && panPath.isNotEmpty) {
       panKey = await _uploadFileToS3(
         filePath: panPath,
-        s3ObjectName: 'transport/pancard/$cleanMobile/pan_$timestamp${p.extension(panPath)}',
-        authToken: _s3AuthToken,
+        s3ObjectName:
+        'transport/pancard/$cleanMobile/pan_$timestamp${p.extension(panPath)}',
       );
     }
     if (voterPath != null && voterPath.isNotEmpty) {
       voterKey = await _uploadFileToS3(
         filePath: voterPath,
-        s3ObjectName: 'transport/voterid/$cleanMobile/voter_$timestamp${p.extension(voterPath)}',
-        authToken: _s3AuthToken,
+        s3ObjectName:
+        'transport/voterid/$cleanMobile/voter_$timestamp${p.extension(voterPath)}',
       );
     }
     if (dlPath != null && dlPath.isNotEmpty) {
       dlKey = await _uploadFileToS3(
         filePath: dlPath,
-        s3ObjectName: 'transport/drivinglicense/$cleanMobile/dl_$timestamp${p.extension(dlPath)}',
-        authToken: _s3AuthToken,
+        s3ObjectName:
+        'transport/drivinglicense/$cleanMobile/dl_$timestamp${p.extension(dlPath)}',
       );
     }
     if (rcPath != null && rcPath.isNotEmpty) {
       rcKey = await _uploadFileToS3(
         filePath: rcPath,
-        s3ObjectName: 'transport/rcbook/$cleanMobile/rc_$timestamp${p.extension(rcPath)}',
-        authToken: _s3AuthToken,
+        s3ObjectName:
+        'transport/rcbook/$cleanMobile/rc_$timestamp${p.extension(rcPath)}',
       );
     }
 
@@ -154,7 +155,7 @@ class TransportProviderService {
         'Content-Type': 'application/json; charset=UTF-8',
         'Accept': 'application/json',
         'ngrok-skip-browser-warning': 'true',
-        'Authorization': 'Token $sessionToken', // Backend uses sessionToken
+        'Authorization': 'Token $sessionToken',
       },
       body: jsonEncode(finalProvider.toJson()),
     );

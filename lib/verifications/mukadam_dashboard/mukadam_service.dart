@@ -1,29 +1,29 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'mukkadam_data_model.dart';
 
 class MukkadamService {
-  // static const String dashboardUrl =
-  //     "https://furtive-chrissy-reparably.ngrok-free.dev/api/dashboard/user";
-  // static const String detailUrl =
-  //     "https://furtive-chrissy-reparably.ngrok-free.dev/api/mukkadam";
+  static String get deployedUrl =>
+      dotenv.env['DEPLOYED_URL'] ?? 'https://supply.bharatintelligence.ai';
 
-  static const String dashboardUrl =
-      "https://supply.bharatintelligence.ai/api/dashboard/user";
-  static const String detailUrl =
-      "https://supply.bharatintelligence.ai/api/mukkadam";
+  static String get dashboardUrl => '$deployedUrl/api/dashboard/user';
+  static String get detailUrl => '$deployedUrl/api/mukkadam';
+
+  static String get s3UploadUrl =>
+      dotenv.env['S3_UPLOAD_URL'] ??
+          'https://demand.bharatintelligence.ai/chat/api/upload_image_to_s3/';
+
+  static String get s3AuthToken =>
+      dotenv.env['S3_UPDATED_TOKEN'] ?? '';
 
   Future<String?> uploadFileToS3({
     required String filePath,
     required String s3ObjectName,
   }) async {
-    final String s3Url =
-        "https://demand.bharatintelligence.ai/chat/api/upload_image_to_s3/";
-    final String s3AuthToken = 'e8fa8310c9af344ca22ec6bd23960d609b09c704';
-
-    final uri = Uri.parse(s3Url);
+    final uri = Uri.parse(s3UploadUrl);
     final request = http.MultipartRequest('POST', uri);
 
     request.headers['Authorization'] = 'Token $s3AuthToken';
@@ -47,8 +47,6 @@ class MukkadamService {
     }
   }
 
-  /// Fetch mukkadams with pending/not_started verifications
-  /// Used by: MukkadamListScreen (Verification Queue)
   Future<List<MukkadamDataModel>> fetchMukkadams(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final String? sessionToken = prefs.getString('session_token');
@@ -59,7 +57,7 @@ class MukkadamService {
 
     final response = await http.get(
       Uri.parse(
-          'https://supply.bharatintelligence.ai/api/users/$userId/pending-verifications/?type=mukkadam&status=not_started,pending'),
+          '$deployedUrl/api/users/$userId/pending-verifications/?type=mukkadam&status=not_started,pending'),
       headers: {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true',
@@ -78,8 +76,6 @@ class MukkadamService {
     }
   }
 
-  /// Fetch mukkadams with completed verifications
-  /// Used by: DirectoryScreen (Referrals - Registrations tab)
   Future<List<MukkadamDataModel>> fetchVerifiedMukkadams(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final String? sessionToken = prefs.getString('session_token');
@@ -90,7 +86,7 @@ class MukkadamService {
 
     final response = await http.get(
       Uri.parse(
-          'https://supply.bharatintelligence.ai/api/users/$userId/pending-verifications/?type=mukkadam&status=completed'),
+          '$deployedUrl/api/users/$userId/pending-verifications/?type=mukkadam&status=completed'),
       headers: {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true',
@@ -109,7 +105,6 @@ class MukkadamService {
     }
   }
 
-  /// Fetch single mukkadam detail
   Future<Map<String, dynamic>> fetchMukkadamDetails(int id) async {
     final prefs = await SharedPreferences.getInstance();
     final String? sessionToken = prefs.getString('session_token');
@@ -128,7 +123,6 @@ class MukkadamService {
     }
   }
 
-  /// PATCH update mukkadam
   Future<bool> updateMukkadam(int id, Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     final String? sessionToken = prefs.getString('session_token');

@@ -1,17 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
-
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:http_parser/http_parser.dart';
 
-
-class quickRegistrationService {
-  static const String _baseUrl = 'https://supply.bharatintelligence.ai/api/mukkadam/';
-  //static const String _baseUrl = 'https://furtive-chrissy-reparably.ngrok-free.dev/api/mukkadam/';
+class QuickRegistrationService {
+  static final String _baseUrl = '${dotenv.env['DEPLOYED_URL']!}/api/mukkadam/';
   static const String _s3FileUploadUrl = 'https://demand.bharatintelligence.ai/chat/api/upload_image_to_s3/';
+  static final String _s3Token = dotenv.env['S3_UPDATED_TOKEN']!;
 
   /// Helper function to upload a single file to the dedicated S3 upload endpoint
   Future<String?> _uploadFileToS3({
@@ -21,20 +19,16 @@ class quickRegistrationService {
   }) async {
     final uri = Uri.parse(_s3FileUploadUrl);
     final request = http.MultipartRequest('POST', uri);
-    final String authTokenn = 'e8fa8310c9af344ca22ec6bd23960d609b09c704';
-    // Use the authToken passed from the provider instead of a hardcoded one
-    request.headers['Authorization'] = 'Token $authTokenn';
-    request.headers['ngrok-skip-browser-warning'] = 'true';
 
-    // Get file extension, handle edge cases
+    request.headers['Authorization'] = 'Token $_s3Token';
+
     String fileExtension = p.extension(filePath);
     if (fileExtension.isNotEmpty && fileExtension.startsWith('.')) {
       fileExtension = fileExtension.substring(1);
     } else {
-      fileExtension = 'jpg'; // default fallback
+      fileExtension = 'jpg';
     }
 
-    // The S3 upload API expects the file under the 'image' field
     request.files.add(
       await http.MultipartFile.fromPath(
         'image',
@@ -44,7 +38,6 @@ class quickRegistrationService {
       ),
     );
 
-    // The S3 upload API expects the desired S3 object name under 'name_of_image'
     request.fields['name_of_image'] = s3ObjectName;
 
     try {
@@ -85,7 +78,6 @@ class quickRegistrationService {
 
     print('📤 Starting S3 uploads for mobile: $mobileNumber');
 
-    // Upload Profile Photo
     if (profilePhotoPath != null && profilePhotoPath.isNotEmpty) {
       final String fileExtension = p.extension(profilePhotoPath).isNotEmpty
           ? p.extension(profilePhotoPath).substring(1)
@@ -103,7 +95,6 @@ class quickRegistrationService {
       }
     }
 
-    // Upload Aadhar Card
     if (aadharCardPath != null && aadharCardPath.isNotEmpty) {
       final String aadharNumberForPath = aadharNumber ?? 'unknown_aadhar';
       final String fileExtension = p.extension(aadharCardPath).isNotEmpty
@@ -122,7 +113,6 @@ class quickRegistrationService {
       }
     }
 
-    // Upload PAN Card
     if (panCardPath != null && panCardPath.isNotEmpty) {
       final String panNumberForPath = panNumber ?? 'unknown_pan';
       final String fileExtension = p.extension(panCardPath).isNotEmpty
@@ -141,7 +131,6 @@ class quickRegistrationService {
       }
     }
 
-    // Upload Bank Proof
     if (bankProofPath != null && bankProofPath.isNotEmpty) {
       final String fileExtension = p.extension(bankProofPath).isNotEmpty
           ? p.extension(bankProofPath).substring(1)
@@ -159,7 +148,6 @@ class quickRegistrationService {
       }
     }
 
-    // Upload Location Capture Photo
     if (locationCapturePath != null && locationCapturePath.isNotEmpty) {
       final String fileExtension = p.extension(locationCapturePath).isNotEmpty
           ? p.extension(locationCapturePath).substring(1)
@@ -181,7 +169,6 @@ class quickRegistrationService {
   }
 
   /// Quick register mukkadam with S3 document uploads.
-  /// The [authToken] should be passed from the UserProvider in the UI.
   Future<Map<String, dynamic>> quickRegisterMukkadam({
     required String authToken,
     required Map<String, dynamic> mukkadamData,
@@ -194,7 +181,6 @@ class quickRegistrationService {
     final Uri uri = Uri.parse('${_baseUrl}quick_register/');
 
     try {
-      // Step 1: Upload all documents to S3 using the authToken from provider
       print('📤 Step 1: Uploading documents to S3...');
       final String mobileNumber = mukkadamData['mobile_numbers']?.toString() ?? 'unknown';
       final String? aadharNumber = mukkadamData['aadhar_number']?.toString();
@@ -212,7 +198,6 @@ class quickRegistrationService {
         panNumber: panNumber,
       );
 
-      // Check if critical uploads failed
       if (profilePhotoPath != null && !s3Keys.containsKey('profile_photo_s3_key')) {
         return {
           'success': false,
@@ -220,20 +205,17 @@ class quickRegistrationService {
         };
       }
 
-      // Step 2: Add S3 keys to mukkadam data
       final Map<String, dynamic> finalPayload = {
         ...mukkadamData,
         ...s3Keys,
       };
 
-      // Step 3: Submit registration with S3 keys
       print('📤 Step 3: Submitting registration to backend...');
       final response = await http.post(
         uri,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
           'Authorization': 'Token $authToken',
         },
         body: json.encode(finalPayload),
@@ -267,20 +249,14 @@ class quickRegistrationService {
     }
   }
 
-
   /// Fetch Kharad Tender Rates reference image directly as bytes
-  /// Returns raw image bytes as List<int> since API returns image directly
   Future<List<int>?> fetchRateCardImage() async {
-    const String rateCardUrl = 'https://supply.bharatintelligence.ai/api/rate-card/';
+    final String rateCardUrl = '${dotenv.env['DEPLOYED_URL']!}/api/rate-card/';
 
-    //const String rateCardUrl = 'https://furtive-chrissy-reparably.ngrok-free.dev/api/rate-card/';
     try {
       print('📷 Fetching rate card image from $rateCardUrl');
       final response = await http.get(
         Uri.parse(rateCardUrl),
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
       );
 
       if (response.statusCode == 200) {
@@ -295,7 +271,4 @@ class quickRegistrationService {
       return null;
     }
   }
-
-
-
 }

@@ -1,18 +1,16 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:mukadam_bi/referral/registration_response.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../verifications/mukadam_dashboard/mukkadam_data_model.dart';
 
-
 class MukkadamServiceee {
-  // static const String baseUrl =
-  //     "https://furtive-chrissy-reparably.ngrok-free.dev/api/users";
-  static const String baseUrl =
-      "https://supply.bharatintelligence.ai/api/users";
+  // 🔁 Switch between DEPLOYED_URL and TEST_URL:
+  static final String baseUrl = '${dotenv.env['DEPLOYED_URL']!}/api/users';
+  // static final String baseUrl = '${dotenv.env['TEST_URL']!}/api/users';
 
-  /// ✅ Fetches ALL mukkadams (all statuses) — used by DirectoryScreen
-  /// Includes verified ones so the screen can filter for is_aadhaar + is_pan verified
+  /// Fetches ALL mukkadams (all statuses) — used by DirectoryScreen
   Future<List<MukkadamDataModell>> fetchMukkadams(int userId) async {
     final url = Uri.parse(
       '$baseUrl/$userId/pending-verifications/'
@@ -27,7 +25,6 @@ class MukkadamServiceee {
         url,
         headers: {
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
           'Authorization': 'Token $sessionToken',
         },
       );
@@ -61,7 +58,6 @@ class MukkadamServiceee {
         url,
         headers: {
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
           'Authorization': 'Token $sessionToken',
         },
       );
@@ -84,7 +80,7 @@ class MukkadamServiceee {
   Future<List<MukkadamDataModell>> fetchVerifiedMukkadams(int userId) async {
     final url = Uri.parse(
       '$baseUrl/$userId/pending-verifications/'
-          '?type=mukkadam&status=verified',  // ← only verified status
+          '?type=mukkadam&status=verified',
     );
 
     final prefs = await SharedPreferences.getInstance();
@@ -95,7 +91,6 @@ class MukkadamServiceee {
         url,
         headers: {
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
           'Authorization': 'Token $sessionToken',
         },
       );
@@ -113,5 +108,4 @@ class MukkadamServiceee {
       throw Exception('Error fetching verified mukkadams: $e');
     }
   }
-
 }

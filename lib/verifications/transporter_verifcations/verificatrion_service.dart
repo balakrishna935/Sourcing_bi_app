@@ -1,26 +1,51 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:mukadam_bi/verifications/transporter_verifcations/verification_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class VerificationService {
-  // static const String baseUrl =
-  //     "https://furtive-chrissy-reparably.ngrok-free.dev/api/users";
+  // ─── Environment-driven URLs & tokens ───
+  static String get deployedUrl =>
+      dotenv.env['DEPLOYED_URL'] ?? 'https://supply.bharatintelligence.ai';
 
+  static String get baseUrl => '$deployedUrl/api/users';
 
-  static const String baseUrl =
-      "https://supply.bharatintelligence.ai/api/users";
+  static String get transporterBaseUrl =>
+      '$deployedUrl/api/transport-providers';
 
+  static String get s3UploadUrl =>
+      dotenv.env['S3_UPLOAD_URL'] ??
+          'https://demand.bharatintelligence.ai/chat/api/upload_image_to_s3/';
 
+  static String get s3AuthToken =>
+      dotenv.env['S3_UPDATED_TOKEN'] ?? '';
+
+  // ─── Helper to get session token ───
+  Future<String?> _getSessionToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? sessionToken = prefs.getString('session_token');
+    if (sessionToken == null) {
+      print("Error: session_token is null in SharedPreferences");
+    }
+    return sessionToken;
+  }
+
+  // ─── Common headers ───
+  Map<String, String> _headers(String? sessionToken, {bool withContentType = true}) {
+    return {
+      if (withContentType) 'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      'Authorization': 'Token $sessionToken',
+    };
+  }
+
+  // ─── S3 Upload ───
   Future<String?> uploadFileToS3({
     required String filePath,
     required String s3ObjectName,
   }) async {
-    final String s3Url =
-        "https://demand.bharatintelligence.ai/chat/api/upload_image_to_s3/";
-    final String s3AuthToken = 'e8fa8310c9af344ca22ec6bd23960d609b09c704';
-
-    final uri = Uri.parse(s3Url);
+    final uri = Uri.parse(s3UploadUrl);
     final request = http.MultipartRequest('POST', uri);
 
     request.headers['Authorization'] = 'Token $s3AuthToken';
@@ -44,27 +69,17 @@ class VerificationService {
     }
   }
 
-  /// Fetches ONLY pending/not_started verifications (for PendingVerificationListScreen)
+  // ─── Fetch ONLY pending/not_started verifications ───
   Future<List<VerificationEntity>> fetchPendingVerifications(int userId) async {
+    final sessionToken = await _getSessionToken();
     final url = Uri.parse(
       "$baseUrl/$userId/pending-verifications/?type=transporter&status=not_started,pending",
     );
 
-    final prefs = await SharedPreferences.getInstance();
-    final String? sessionToken = prefs.getString('session_token');
-
-    if (sessionToken == null) {
-      print("Error: session_token is null in SharedPreferences");
-    }
-
     try {
       final response = await http.get(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Authorization': 'Token $sessionToken',
-        },
+        headers: _headers(sessionToken),
       );
 
       if (response.statusCode == 200) {
@@ -78,27 +93,17 @@ class VerificationService {
     }
   }
 
-  /// ✅ NEW: Fetches ALL verifications including verified ones (for TransportDirectoryScreen)
+  // ─── Fetch ALL verifications including verified ───
   Future<List<VerificationEntity>> fetchAllVerifications(int userId) async {
+    final sessionToken = await _getSessionToken();
     final url = Uri.parse(
       "$baseUrl/$userId/pending-verifications/?type=transporter&status=not_started,pending,verified",
     );
 
-    final prefs = await SharedPreferences.getInstance();
-    final String? sessionToken = prefs.getString('session_token');
-
-    if (sessionToken == null) {
-      print("Error: session_token is null in SharedPreferences");
-    }
-
     try {
       final response = await http.get(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Authorization': 'Token $sessionToken',
-        },
+        headers: _headers(sessionToken),
       );
 
       if (response.statusCode == 200) {
@@ -112,22 +117,16 @@ class VerificationService {
     }
   }
 
+  // ─── Fetch single transporter details ───
   Future<Map<String, dynamic>> fetchTransporterDetails(
       int transporterId) async {
-    final url = Uri.parse(
-        "https://supply.bharatintelligence.ai/api/transport-providers/$transporterId/");
-
-    final prefs = await SharedPreferences.getInstance();
-    final String? sessionToken = prefs.getString('session_token');
+    final sessionToken = await _getSessionToken();
+    final url = Uri.parse('$transporterBaseUrl/$transporterId/');
 
     try {
       final response = await http.get(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Authorization': 'Token $sessionToken',
-        },
+        headers: _headers(sessionToken),
       );
 
       if (response.statusCode == 200) {
@@ -140,22 +139,16 @@ class VerificationService {
     }
   }
 
+  // ─── PATCH update transporter ───
   Future<bool> updateTransporter(
       int transporterId, Map<String, dynamic> data) async {
-    final url = Uri.parse(
-        "https://supply.bharatintelligence.ai/api/transport-providers/$transporterId/");
-
-    final prefs = await SharedPreferences.getInstance();
-    final String? sessionToken = prefs.getString('session_token');
+    final sessionToken = await _getSessionToken();
+    final url = Uri.parse('$transporterBaseUrl/$transporterId/');
 
     try {
       final response = await http.patch(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Authorization': 'Token $sessionToken',
-        },
+        headers: _headers(sessionToken),
         body: json.encode(data),
       );
 

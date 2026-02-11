@@ -25,21 +25,9 @@ class OtpApiService {
   static Future<bool> checkMobileExists({required String phoneNumber}) async {
     try {
       //testing side
-      // final response = await http.post(
-      //   Uri.parse(
-      //       "https://furtive-chrissy-reparably.ngrok-free.dev/api/auth/check-mobile/"),
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     'ngrok-skip-browser-warning': 'true',
-      //   },
-      //   body: jsonEncode({
-      //     "mobile_number": phoneNumber,
-      //   }),
-      // );
-
       final response = await http.post(
         Uri.parse(
-            "https://supply.bharatintelligence.ai/api/auth/check-mobile/"),
+            "https://furtive-chrissy-reparably.ngrok-free.dev/api/auth/check-mobile/"),
         headers: {
           "Content-Type": "application/json",
           'ngrok-skip-browser-warning': 'true',
@@ -48,6 +36,18 @@ class OtpApiService {
           "mobile_number": phoneNumber,
         }),
       );
+
+      // final response = await http.post(
+      //   Uri.parse(
+      //       "https://supply.bharatintelligence.ai/api/auth/check-mobile/"),
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     'ngrok-skip-browser-warning': 'true',
+      //   },
+      //   body: jsonEncode({
+      //     "mobile_number": phoneNumber,
+      //   }),
+      // );
 
       print("Check Mobile Status Code: ${response.statusCode}");
       print("Check Mobile Response Body: ${response.body}");
@@ -71,21 +71,9 @@ class OtpApiService {
     try {
 
       //testing side
-      // final response = await http.post(
-      //   Uri.parse(
-      //       "https://furtive-chrissy-reparably.ngrok-free.dev/api/auth/mobile-login/"),
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     'ngrok-skip-browser-warning': 'true',
-      //   },
-      //   body: jsonEncode({
-      //     "mobile_number": phoneNumber,
-      //   }),
-      // );
-
       final response = await http.post(
         Uri.parse(
-            "https://supply.bharatintelligence.ai/api/auth/mobile-login/"),
+            "https://furtive-chrissy-reparably.ngrok-free.dev/api/auth/mobile-login/"),
         headers: {
           "Content-Type": "application/json",
           'ngrok-skip-browser-warning': 'true',
@@ -94,6 +82,18 @@ class OtpApiService {
           "mobile_number": phoneNumber,
         }),
       );
+
+      // final response = await http.post(
+      //   Uri.parse(
+      //       "https://supply.bharatintelligence.ai/api/auth/mobile-login/"),
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     'ngrok-skip-browser-warning': 'true',
+      //   },
+      //   body: jsonEncode({
+      //     "mobile_number": phoneNumber,
+      //   }),
+      // );
 
 
 

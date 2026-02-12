@@ -28,8 +28,7 @@ import 'getTransport/gettransportscreen.dart';
 import 'mukadan/authentication/screens/sendOtpScreen.dart';
 import 'mukadan/authentication/userProvider.dart';
 import 'mukadan/quick_registration/quick_registration_Screen.dart';
-import 'mukadan/registration/mukadam_registration_Screen.dart';
-import 'notes/end_Screen.dart';
+
 import 'notes/todo_screen.dart';
 import 'notes/visitApiService.dart';
 

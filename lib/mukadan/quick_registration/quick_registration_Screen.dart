@@ -9,6 +9,7 @@ import 'package:mukadam_bi/mukadan/quick_registration/quick_registration_service
 import 'package:provider/provider.dart';
 
 import '../../geo_tagging.dart';
+
 import '../../notes/data.dart';
 import '../authentication/userProvider.dart';
 

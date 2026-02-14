@@ -29,7 +29,7 @@ import 'mukadan/authentication/screens/sendOtpScreen.dart';
 import 'mukadan/authentication/userProvider.dart';
 import 'mukadan/quick_registration/quick_registration_Screen.dart';
 
-import 'notes/todo_screen.dart';
+
 import 'notes/visitApiService.dart';
 
 import 'package:geolocator/geolocator.dart' as geo;

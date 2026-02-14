@@ -42,7 +42,11 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
 
   void _loadData() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    int userId = userProvider.user?.id ?? 29;
+    int? userId = userProvider.user?.id;
+    if(userId==null)
+      {
+        return;
+      }
 
     setState(() {
       _verificationFuture =

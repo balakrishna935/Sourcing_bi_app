@@ -5,7 +5,7 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:intl/intl.dart';
 import 'package:mukadam_bi/call_stack.dart';
-import 'package:mukadam_bi/plans/allPlansScreen.dart';
+
 import 'package:mukadam_bi/referral/user_referral_mukadam_screen.dart';
 import 'package:mukadam_bi/seeplan/plan_list_screen.dart';
 import 'package:mukadam_bi/seeplan/villages_list_screen.dart';
@@ -29,7 +29,7 @@ import 'mukadan/authentication/screens/sendOtpScreen.dart';
 import 'mukadan/authentication/userProvider.dart';
 import 'mukadan/quick_registration/quick_registration_Screen.dart';
 
-import 'notes/todo_screen.dart';
+
 import 'notes/visitApiService.dart';
 
 import 'package:geolocator/geolocator.dart' as geo;

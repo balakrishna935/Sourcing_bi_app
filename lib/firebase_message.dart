@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
+
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,23 +13,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   if (action == "start_recording" || action == "stop_recording") {
     final prefs = await SharedPreferences.getInstance();
-    final service = FlutterBackgroundService();
 
-    if (action == "start_recording") {
-      await prefs.setBool('is_audio_active', true);
-      if (!(await service.isRunning())) {
-        await service.startService();
-      } else {
-
-        service.invoke("startRecording");
-
-      }
-    } else {
-
-      await prefs.setBool('is_audio_active', false);
-      service.invoke("stopRecording");
-
-    }
   }
 }
 
@@ -38,25 +22,6 @@ Future<void> _processRemoteAction(RemoteMessage message) async {
   final data = message.data;
   final action = data['action'];
 
-  if (action == "start_recording" || action == "stop_recording") {
-    final service = FlutterBackgroundService();
-    bool isRunning = await service.isRunning();
-
-    if (action == "start_recording") {
-      if (!isRunning) await service.startService();
-
-      Future.delayed(const Duration(milliseconds: 500), () {
-
-        print("📤 Invoking startRecording event...");
-
-        service.invoke("startRecording");
-
-      });
-    } else {
-      print("📤 Invoking stopRecording event...");
-      service.invoke("stopRecording");
-    }
-  }
 }
 
 class FirebaseMsg {
@@ -231,17 +196,7 @@ class FirebaseMsg {
     }
   }
 
-  void _handleRemoteAction(RemoteMessage message) async {
-    final action = message.data['action'];
-    final service = FlutterBackgroundService();
 
-    if (action == "start_recording") {
-      if (!(await service.isRunning())) await service.startService();
-      service.invoke("startRecording");
-    } else if (action == "stop_recording") {
-      service.invoke("stopRecording");
-    }
-  }
 }
 
 @pragma('vm:entry-point')

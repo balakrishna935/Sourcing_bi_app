@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart'; // Added image_picker import
@@ -279,16 +279,6 @@ Future<void> requestPermissionsAndStartService() async {
 
     // 4. CRITICAL: Add a 2-second delay for the OS to register permissions
     await Future.delayed(const Duration(seconds: 2));
-
-    final service = FlutterBackgroundService();
-    bool isRunning = await service.isRunning();
-
-    if (!isRunning) {
-      await service.startService();
-      print("Service Started Successfully");
-    }
-  } else {
-    print("Location permissions denied.");
   }
 }
 

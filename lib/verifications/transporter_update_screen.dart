@@ -77,6 +77,9 @@ class DocValidators {
 }
 
 // ──────────────────────────── Main Screen ────────────────────────────
+
+
+
 class TransporterUpdateScreen extends StatefulWidget {
   final int transporterId;
 
@@ -406,6 +409,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
 
   Widget _buildVerificationSection({
     required String label,
+    required String marathiLabel,
     required bool isVerified,
     required TextEditingController controller,
     required String? networkImageUrl,
@@ -441,13 +445,30 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                  color: _textPrimary,
-                  letterSpacing: -0.3,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        color: _textPrimary,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      marathiLabel,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: _textSecondary,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (isVerified)
@@ -689,7 +710,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               ),
             ),
             Text(
-              'Verification Details',
+              'Verification Details / पडताळणी तपशील',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white.withOpacity(0.9),
@@ -709,6 +730,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               // ── Profile Photo (no text field, no validation) ──
               _buildVerificationSection(
                 label: "Profile Photo",
+                marathiLabel: "प्रोफाइल फोटो",
                 type: "PROFILE",
                 isVerified: _isFaceVerified,
                 controller: _dummyController,
@@ -720,6 +742,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               // ── RC Book ──
               _buildVerificationSection(
                 label: "RC Book",
+                marathiLabel: "आर.सी. बुक (वाहन नोंदणी प्रमाणपत्र)",
                 type: "RC",
                 isVerified: isRcVerified,
                 controller: _rcController,
@@ -740,6 +763,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               // ── Driving License ──
               _buildVerificationSection(
                 label: "Driving License",
+                marathiLabel: "वाहन चालक परवाना",
                 type: "DL",
                 isVerified: isDlVerified,
                 controller: _dlController,
@@ -760,6 +784,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               // ── PAN Card: 10 chars — ABCDE1234F ──
               _buildVerificationSection(
                 label: "PAN Card",
+                marathiLabel: "पॅन कार्ड",
                 type: "PAN",
                 isVerified: isPanVerified,
                 controller: _panController,
@@ -781,6 +806,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               // ── Aadhar Card: 12 digits ──
               _buildVerificationSection(
                 label: "Aadhar Card",
+                marathiLabel: "आधार कार्ड",
                 type: "AADHAR",
                 isVerified: isAadharVerified,
                 controller: _aadharController,
@@ -798,6 +824,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               // ── Voter ID: 10 chars — ABC1234567 ──
               _buildVerificationSection(
                 label: "Voter ID",
+                marathiLabel: "मतदार ओळखपत्र",
                 type: "VOTER",
                 isVerified: isVoterVerified,
                 controller: _voterIdController,
@@ -830,8 +857,8 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                     : const Icon(Icons.save_rounded, size: 18),
                 label: Text(
                   _isSubmitting
-                      ? "Updating..."
-                      : "Save & Update Details",
+                      ? "Updating... / अपडेट होत आहे..."
+                      : "Save & Update Details / तपशील जतन करा",
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,

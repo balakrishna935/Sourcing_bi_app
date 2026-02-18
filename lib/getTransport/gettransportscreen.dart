@@ -73,9 +73,15 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
               entity.entity.isRcVerified &&
               entity.entity.isDlVerified;
 
+          // ✅ UPDATED: Search both English and Marathi names
+          final query = widget.searchQuery.toLowerCase();
           bool matchesSearch = entity.entity.name
               .toLowerCase()
-              .contains(widget.searchQuery.toLowerCase());
+              .contains(query) ||
+              (entity.entity.marathiName
+                  ?.toLowerCase()
+                  .contains(query) ??
+                  false);
 
           return matchesVerification && matchesSearch;
         }).toList();
@@ -318,7 +324,7 @@ class TransporterCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Gradient avatar
+                // Gradient avatar — uses English name initial
                 Container(
                   width: 56,
                   height: 56,
@@ -350,8 +356,9 @@ class TransporterCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // ✅ UPDATED: Shows "NAME / मराठी नाव"
                       Text(
-                        entity.name,
+                        entity.displayName.toUpperCase(),
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
@@ -359,7 +366,7 @@ class TransporterCard extends StatelessWidget {
                           letterSpacing: -0.2,
                           height: 1.3,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
@@ -436,8 +443,6 @@ class TransporterCard extends StatelessWidget {
                     ],
                   ),
                 ),
-
-
               ],
             ),
           ),

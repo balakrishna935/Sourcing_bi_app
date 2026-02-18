@@ -2,15 +2,30 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mukadam_bi/verifications/transporter_verifcations/verification_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:translator/translator.dart';
+import 'package:devlipi/devlipi.dart';
 
 class VerificationService {
-  // static const String baseUrl =
-  //     "https://furtive-chrissy-reparably.ngrok-free.dev/api/users";
-
-
   static const String baseUrl =
       "https://supply.bharatintelligence.ai/api/users";
 
+  // ✅ NEW: Translator instance
+  final GoogleTranslator _translator = GoogleTranslator();
+
+  // ✅ NEW: Same logic as PlanService._toMarathi()
+  Future<String> _toMarathi(String text) async {
+    if (text.trim().isEmpty) return text;
+
+    try {
+      final result = await _translator.translate(text, from: 'en', to: 'mr');
+      if (result.text.toLowerCase() != text.toLowerCase()) {
+        return result.text;
+      }
+    } catch (_) {}
+
+    // Fallback to transliteration for short codes / names
+    return Devlipi.transliterate(text);
+  }
 
   Future<String?> uploadFileToS3({
     required String filePath,
@@ -69,7 +84,17 @@ class VerificationService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return PendingVerificationResponse.fromJson(data).entities;
+        List<VerificationEntity> entities =
+            PendingVerificationResponse.fromJson(data).entities;
+
+        // ✅ NEW: Auto convert transporter names to Marathi
+        for (var entity in entities) {
+          if (entity.entity.name.isNotEmpty) {
+            entity.entity.marathiName = await _toMarathi(entity.entity.name);
+          }
+        }
+
+        return entities;
       } else {
         throw Exception("Failed to load verifications");
       }
@@ -78,7 +103,7 @@ class VerificationService {
     }
   }
 
-  /// ✅ NEW: Fetches ALL verifications including verified ones (for TransportDirectoryScreen)
+  /// Fetches ALL verifications including verified ones (for TransportDirectoryScreen)
   Future<List<VerificationEntity>> fetchAllVerifications(int userId) async {
     final url = Uri.parse(
       "$baseUrl/$userId/pending-verifications/?type=transporter&status=not_started,pending,verified",
@@ -103,7 +128,17 @@ class VerificationService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return PendingVerificationResponse.fromJson(data).entities;
+        List<VerificationEntity> entities =
+            PendingVerificationResponse.fromJson(data).entities;
+
+        // ✅ NEW: Auto convert transporter names to Marathi
+        for (var entity in entities) {
+          if (entity.entity.name.isNotEmpty) {
+            entity.entity.marathiName = await _toMarathi(entity.entity.name);
+          }
+        }
+
+        return entities;
       } else {
         throw Exception("Failed to load verifications");
       }

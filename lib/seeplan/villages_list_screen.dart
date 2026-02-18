@@ -26,12 +26,48 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
   DateTime? _startDate;
   DateTime? _endDate;
 
+  bool isMarathi = false;       // ✅ ADD
+  bool isTranslating = false;   // ✅ ADD
+
+
+
   // Stats
   int _totalPlans = 0;
   int _completedPlans = 0;
   int _inProgressPlans = 0;
   int _plannedPlans = 0;
   int _totalVillages = 0;
+
+
+
+  static const Map<String, String> _mr = {
+    'Today': 'आज',
+    'All': 'सर्व',
+    'Upcoming': 'आगामी',
+    'Completed': 'पूर्ण',
+    'In Progress': 'प्रगतीपथावर',
+    'Overview': 'आढावा',
+    'Filters': 'फिल्टर',
+    'Village Visit Plans': 'गाव भेट योजना',
+    'Plans': 'योजना',
+    'Villages': 'गावे',
+    'Days': 'दिवस',
+    'Upcoming Plan': 'आगामी योजना',
+    'No Plans Found': 'योजना सापडल्या नाहीत',
+    'Something went wrong': 'काहीतरी चूक झाली',
+    'Try Again': 'पुन्हा प्रयत्न करा',
+    'Clear Filters': 'फिल्टर काढा',
+  };
+
+
+  static String _label(String eng) {
+    final mr = _mr[eng];
+    return mr != null ? '$eng / $mr' : eng;
+  }
+
+
+
+
 
   // ── Professional Color Palette (matching MukadamDashboard) ──
   static const Color _primaryColor = Color(0xFF1E3A5F);
@@ -452,7 +488,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Completed',
+                  _label('Completed'),
                   _completedPlans.toString(),
                   Icons.check_circle_outline_rounded,
                   _successColor,
@@ -462,7 +498,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
               const SizedBox(width: 10),
               Expanded(
                 child: _buildStatCard(
-                  'In Progress',
+                  _label('In Progress'),
                   _inProgressPlans.toString(),
                   Icons.timelapse_rounded,
                   _warningColor,
@@ -472,7 +508,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
               const SizedBox(width: 10),
               Expanded(
                 child: _buildStatCard(
-                  'Upcoming',
+                  _label('Upcoming'),
                   _plannedPlans.toString(),
                   Icons.event_note_rounded,
                   _accentColor,
@@ -552,19 +588,19 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                _buildFilterChip('Today', 'today', Icons.today_rounded),
+                _buildFilterChip(_label('Today'), 'today', Icons.today_rounded),
                 const SizedBox(width: 8),
-                _buildFilterChip('All', 'all', Icons.grid_view_rounded),
+                _buildFilterChip(_label('All'), 'all', Icons.grid_view_rounded),
                 const SizedBox(width: 8),
                 _buildFilterChip(
-                    'Upcoming', 'planned', Icons.event_note_rounded),
+                    _label('Upcoming'), 'planned', Icons.event_note_rounded),
                 const SizedBox(width: 8),
                 // ── CHANGE 1: Swapped Completed and In Progress order ──
                 _buildFilterChip(
-                    'Completed', 'completed', Icons.check_circle_rounded),
+                    _label('Completed'), 'completed', Icons.check_circle_rounded),
                 const SizedBox(width: 8),
                 _buildFilterChip(
-                    'In Progress', 'in_progress', Icons.timelapse_rounded),
+                    _label('In Progress'), 'in_progress', Icons.timelapse_rounded),
               ],
             ),
           ),
@@ -912,7 +948,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            plan.planName,
+                            plan.displayName,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w900,

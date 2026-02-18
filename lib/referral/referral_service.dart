@@ -2,17 +2,33 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mukadam_bi/referral/registration_response.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:translator/translator.dart';
+import 'package:devlipi/devlipi.dart';
 import '../verifications/mukadam_dashboard/mukkadam_data_model.dart';
 
-
 class MukkadamServiceee {
-  // static const String baseUrl =
-  //     "https://furtive-chrissy-reparably.ngrok-free.dev/api/users";
   static const String baseUrl =
       "https://supply.bharatintelligence.ai/api/users";
 
+  // ✅ NEW: Translator instance
+  final GoogleTranslator _translator = GoogleTranslator();
+
+  // ✅ NEW: Same logic as VerificationService._toMarathi()
+  Future<String> _toMarathi(String text) async {
+    if (text.trim().isEmpty) return text;
+
+    try {
+      final result = await _translator.translate(text, from: 'en', to: 'mr');
+      if (result.text.toLowerCase() != text.toLowerCase()) {
+        return result.text;
+      }
+    } catch (_) {}
+
+    // Fallback to transliteration for short codes / names
+    return Devlipi.transliterate(text);
+  }
+
   /// ✅ Fetches ALL mukkadams (all statuses) — used by DirectoryScreen
-  /// Includes verified ones so the screen can filter for is_aadhaar + is_pan verified
   Future<List<MukkadamDataModell>> fetchMukkadams(int userId) async {
     final url = Uri.parse(
       '$baseUrl/$userId/pending-verifications/'
@@ -35,9 +51,18 @@ class MukkadamServiceee {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> entities = data['entities'] ?? [];
-        return entities
+        List<MukkadamDataModell> mukkadams = entities
             .map((json) => MukkadamDataModell.fromJson(json))
             .toList();
+
+        // ✅ NEW: Auto convert mukkadam names to Marathi
+        for (var m in mukkadams) {
+          if (m.mukkadamName.isNotEmpty) {
+            m.marathiName = await _toMarathi(m.mukkadamName);
+          }
+        }
+
+        return mukkadams;
       } else {
         throw Exception('Failed to load mukkadams');
       }
@@ -69,9 +94,18 @@ class MukkadamServiceee {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> entities = data['entities'] ?? [];
-        return entities
+        List<MukkadamDataModell> mukkadams = entities
             .map((json) => MukkadamDataModell.fromJson(json))
             .toList();
+
+        // ✅ NEW: Auto convert mukkadam names to Marathi
+        for (var m in mukkadams) {
+          if (m.mukkadamName.isNotEmpty) {
+            m.marathiName = await _toMarathi(m.mukkadamName);
+          }
+        }
+
+        return mukkadams;
       } else {
         throw Exception('Failed to load verifications');
       }
@@ -84,7 +118,7 @@ class MukkadamServiceee {
   Future<List<MukkadamDataModell>> fetchVerifiedMukkadams(int userId) async {
     final url = Uri.parse(
       '$baseUrl/$userId/pending-verifications/'
-          '?type=mukkadam&status=verified',  // ← only verified status
+          '?type=mukkadam&status=verified',
     );
 
     final prefs = await SharedPreferences.getInstance();
@@ -103,9 +137,18 @@ class MukkadamServiceee {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> entities = data['entities'] ?? [];
-        return entities
+        List<MukkadamDataModell> mukkadams = entities
             .map((json) => MukkadamDataModell.fromJson(json))
             .toList();
+
+        // ✅ NEW: Auto convert mukkadam names to Marathi
+        for (var m in mukkadams) {
+          if (m.mukkadamName.isNotEmpty) {
+            m.marathiName = await _toMarathi(m.mukkadamName);
+          }
+        }
+
+        return mukkadams;
       } else {
         throw Exception('Failed to load verified mukkadams');
       }
@@ -113,5 +156,4 @@ class MukkadamServiceee {
       throw Exception('Error fetching verified mukkadams: $e');
     }
   }
-
 }

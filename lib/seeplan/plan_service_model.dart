@@ -11,6 +11,7 @@ class VillageVisitPlan {
   final String status;
   final String statusDisplay;
   final String purpose;
+  String? marathiPlanName;
 
   VillageVisitPlan({
     required this.id,
@@ -20,20 +21,31 @@ class VillageVisitPlan {
     required this.dailyPlans,
     required this.status,
     required this.statusDisplay,
-    required this.purpose
+    required this.purpose,
+    this.marathiPlanName,
   });
+
+  String get displayName {
+    if (marathiPlanName != null && marathiPlanName!.isNotEmpty) {
+      return '$planName / $marathiPlanName';
+    }
+    return planName;
+  }
 
   factory VillageVisitPlan.fromJson(Map<String, dynamic> json) {
     return VillageVisitPlan(
       id: json['id']?.toString() ?? '',
-      purpose: json['"purpose"']?.toString()??'',
+      purpose: json['"purpose"']?.toString() ?? '',
       planName: json['plan_name']?.toString() ?? '',
       startDate: json['start_date']?.toString() ?? '',
       endDate: json['end_date']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
-      statusDisplay: json['status_display']?.toString() ?? (json['status']?.toString() ?? ''),
+      statusDisplay: json['status_display']?.toString() ??
+          (json['status']?.toString() ?? ''),
       dailyPlans: json['daily_plans'] != null
-          ? (json['daily_plans'] as List).map((i) => DailyPlan.fromJson(i)).toList()
+          ? (json['daily_plans'] as List)
+          .map((i) => DailyPlan.fromJson(i))
+          .toList()
           : [],
     );
   }
@@ -65,9 +77,11 @@ class DailyPlan {
       purpose: json['purpose']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       statusDisplay: json['status_display']?.toString() ?? '',
-      villageVisits: json['village_visits'] != null? (json['village_visits'] as List).map((i) => VillageVisit.fromJson(i, visitDateStr)).toList():[]
-
-
+      villageVisits: json['village_visits'] != null
+          ? (json['village_visits'] as List)
+          .map((i) => VillageVisit.fromJson(i, visitDateStr))
+          .toList()
+          : [],
     );
   }
 }
@@ -92,9 +106,14 @@ class VillageVisit {
   final double? villageLongitude;
   final String? startedAt;
   final String? completedAt;
-  final VillageExecution? execution; // Added execution field
+  final VillageExecution? execution;
   final DateTime plannedDate;
 
+  // ✅ NEW: Marathi translation fields
+  String? marathiVillage;
+  String? marathiTaluka;
+  String? marathiDistrict;
+  String? marathiState;
 
   VillageVisit({
     required this.id,
@@ -117,24 +136,58 @@ class VillageVisit {
     this.startedAt,
     this.completedAt,
     this.execution,
-    required this.plannedDate
+    required this.plannedDate,
+    this.marathiVillage,
+    this.marathiTaluka,
+    this.marathiDistrict,
+    this.marathiState,
   });
 
-  factory VillageVisit.fromJson(Map<String, dynamic> json, [String? visitDate]) {
+  // ✅ NEW: Display getters for English / Marathi
+  String get displayVillage {
+    if (marathiVillage != null && marathiVillage!.isNotEmpty) {
+      return '$village / $marathiVillage';
+    }
+    return village;
+  }
 
+  String get displayTaluka {
+    if (marathiTaluka != null && marathiTaluka!.isNotEmpty) {
+      return '$taluka / $marathiTaluka';
+    }
+    return taluka;
+  }
+
+  String get displayDistrict {
+    if (marathiDistrict != null && marathiDistrict!.isNotEmpty) {
+      return '$district / $marathiDistrict';
+    }
+    return district;
+  }
+
+  String get displayState {
+    if (marathiState != null && marathiState!.isNotEmpty) {
+      return '$state / $marathiState';
+    }
+    return state;
+  }
+
+  factory VillageVisit.fromJson(Map<String, dynamic> json,
+      [String? visitDate]) {
     DateTime parsedPlannedDate;
     try {
-      String dateStr = visitDate ?? json['visit_date']?.toString() ?? json['planned_date']?.toString() ?? '';
+      String dateStr = visitDate ??
+          json['visit_date']?.toString() ??
+          json['planned_date']?.toString() ??
+          '';
       if (dateStr.isNotEmpty) {
         parsedPlannedDate = DateTime.parse(dateStr);
       } else {
-        // Default to current date if no date available
         parsedPlannedDate = DateTime.now();
       }
     } catch (e) {
       parsedPlannedDate = DateTime.now();
     }
-
 
     return VillageVisit(
       id: json['id']?.toString() ?? '',
@@ -165,7 +218,7 @@ class VillageVisit {
       execution: json['execution'] != null
           ? VillageExecution.fromJson(json['execution'])
           : null,
-      plannedDate: parsedPlannedDate
+      plannedDate: parsedPlannedDate,
     );
   }
 }
@@ -211,10 +264,14 @@ class VillageExecution {
       villageFeedback: json['village_feedback']?.toString() ?? '',
       totalRegistrations: json['total_registrations'] ?? 0,
       meetings: json['meetings'] != null
-          ? (json['meetings'] as List).map((i) => Meeting.fromJson(i)).toList()
+          ? (json['meetings'] as List)
+          .map((i) => Meeting.fromJson(i))
+          .toList()
           : [],
       proofImages: json['proof_images'] != null
-          ? (json['proof_images'] as List).map((i) => ProofImage.fromJson(i)).toList()
+          ? (json['proof_images'] as List)
+          .map((i) => ProofImage.fromJson(i))
+          .toList()
           : [],
       meetingSummary: json['meeting_summary'] != null
           ? MeetingSummary.fromJson(json['meeting_summary'])
@@ -272,7 +329,9 @@ class Meeting {
           ? double.tryParse(json['meeting_longitude'].toString())
           : null,
       proofImages: json['proof_images'] != null
-          ? (json['proof_images'] as List).map((i) => ProofImage.fromJson(i)).toList()
+          ? (json['proof_images'] as List)
+          .map((i) => ProofImage.fromJson(i))
+          .toList()
           : [],
       createdAt: json['created_at']?.toString() ?? '',
     );
@@ -358,7 +417,8 @@ class OfficialCategory {
   static bool isConditional(String official) => conditional.contains(official);
   static bool isShopowner(String official) => official.startsWith('shopowner_');
   static bool isMukkadam(String official) => official.startsWith('mukkadam_');
-  static bool isInfluentialPerson(String official) => official.startsWith('influential_person');
+  static bool isInfluentialPerson(String official) =>
+      official.startsWith('influential_person');
 
   static int getShopownerNumber(String official) {
     if (!isShopowner(official)) return 0;

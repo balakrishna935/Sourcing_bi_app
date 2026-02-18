@@ -113,7 +113,8 @@ class _PendingVerificationListScreenState
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: _accentColor, width: 1.5),
+                  borderSide:
+                  const BorderSide(color: _accentColor, width: 1.5),
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
@@ -134,8 +135,16 @@ class _PendingVerificationListScreenState
                 }
 
                 final filteredEntities = snapshot.data!.where((item) {
-                  return !item.entity.isFullyVerified &&
-                      item.entity.name.toLowerCase().contains(_searchQuery);
+                  if (item.entity.isFullyVerified) return false;
+                  if (_searchQuery.isEmpty) return true;
+                  // ✅ UPDATED: Search both English and Marathi names
+                  return item.entity.name
+                      .toLowerCase()
+                      .contains(_searchQuery) ||
+                      (item.entity.marathiName
+                          ?.toLowerCase()
+                          .contains(_searchQuery) ??
+                          false);
                 }).toList();
 
                 if (filteredEntities.isEmpty) {
@@ -224,14 +233,12 @@ class _PendingVerificationListScreenState
 
   // ── VERIFICATION CARD ──
   Widget _buildVerificationCard({
-    required dynamic transporter,
+    required EntityDetails transporter,
     required String statusText,
     required Color themeColor,
     required IconData statusIcon,
     required int verifiedCount,
   }) {
-
-
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
@@ -262,7 +269,7 @@ class _PendingVerificationListScreenState
               // ── Top Row: Avatar + Name + Status ──
               Row(
                 children: [
-                  // Avatar
+                  // Avatar — uses original English name initial
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: _primaryColor,
@@ -284,7 +291,8 @@ class _PendingVerificationListScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          transporter.name.toUpperCase(),
+                          // ✅ UPDATED: Shows "NAME / मराठी नाव"
+                          transporter.displayName.toUpperCase(),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -360,7 +368,6 @@ class _PendingVerificationListScreenState
               // ── Progress Bar ──
               Row(
                 children: [
-
                   const SizedBox(width: 10),
                   Text(
                     '$verifiedCount/5',

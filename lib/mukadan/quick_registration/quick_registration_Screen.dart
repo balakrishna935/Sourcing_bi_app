@@ -93,11 +93,10 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   final TextEditingController thirdDippingController = TextEditingController();
 
   // ── Kharad Tender Rates Controllers ──
-  // ── Kharad Tender Rates ──
   final TextEditingController _tenderTotalPriceController = TextEditingController();
   String _tenderReferenceImageUrl = '';
 
-// Static tender activity names (fixed, not editable)
+  // Static tender activity names (fixed, not editable)
   static const List<String> _tenderActivityNames = [
     'छाटणी',
     'शूट निवड (विरळणी)',
@@ -111,21 +110,18 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     'काडी बांधणे (क्लिप्ससह)',
   ];
 
-// Price controllers for each static activity (one per activity)
+  // Price controllers for each static activity (one per activity)
   final List<TextEditingController> _tenderPriceControllers = List.generate(
     10,
         (_) => TextEditingController(),
   );
 
-  // ── Kharad Tender Rates Handlers ──
   // ── Kharad Tender Rates Handler ──
   bool _hasAnyTenderActivity() {
     return _tenderPriceControllers.any((c) => c.text.trim().isNotEmpty);
   }
 
   List<int>? _rateCardImageBytes;
-
-
 
   Future<void> _loadRateCardImage() async {
     final imageBytes = await quickRegistrationService().fetchRateCardImage();
@@ -135,14 +131,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
       });
     }
   }
-
-
-
-
-
-
-
-
 
   File? _selectedImage; // Location capture photo
   File? _profilePhoto;
@@ -175,9 +163,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     super.initState();
     _loadStates();
     _loadRateCardImage();
-
   }
-
 
   @override
   void dispose() {
@@ -188,8 +174,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     // ... your existing dispose calls ...
     super.dispose();
   }
-
-
 
   // --- Location Permission & Service Check ---
   Future<bool> _checkLocationPermissionsAndService() async {
@@ -642,7 +626,23 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     return false;
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // ██  CHANGED: SnackBar validation for Name & Mobile BEFORE
+  // ██  _formKey.currentState!.validate() — all in English
+  // ══════════════════════════════════════════════════════════════
   void _submitQuickForm() async {
+    // ── SnackBar validation for Mukkadam Name ──
+    if (_mukkadamNameController.text.trim().isEmpty) {
+      _showSnackBar("Mukkadam Name is required");
+      return;
+    }
+
+    // ── SnackBar validation for Mobile Number ──
+    if (_mobileNumbersController.text.trim().length != 10) {
+      _showSnackBar("Please enter a valid 10-digit Mobile Number");
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       if (_selectedState == null || _selectedDistrict == null || _selectedTaluka == null || _selectedVillage == null) {
         _showSnackBar("Please select State, District, Taluka, and Village");
@@ -678,8 +678,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
         _showSnackBar('Total price is required when tender activities are provided');
         return;
       }
-
-
 
       // Validate GPS coordinates (mandatory)
       if (_latController.text.isEmpty || _longController.text.isEmpty) {
@@ -723,7 +721,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
         },
 
         // Kharad Tender Rates
-        // Kharad Tender Rates
         "tender_activities": {
           "activities": List.generate(_tenderActivityNames.length, (i) => {
             "name": _tenderActivityNames[i],
@@ -732,8 +729,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
           "total_price": _tenderTotalPriceController.text.trim(),
           "reference_image_url": _tenderReferenceImageUrl,
         },
-
-
 
         "aadhar_number": _aadharNumberController.text,
         "pan_number": _panNumberController.text,
@@ -841,6 +836,11 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ══════════════════════════════════════════════
+                  // ██  CHANGED: Marathi subtitles added for
+                  // ██  Mukkadam Name & Mobile Number ONLY.
+                  // ██  Inline validators removed → snackbar used.
+                  // ══════════════════════════════════════════════
                   _buildSectionCard(
                     title: "Basic Details",
                     subtitle: "मूलभूत माहिती",
@@ -850,21 +850,21 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                         _buildTextField(
                           controller: _mukkadamNameController,
                           label: "Mukkadam Name",
+                          subtitle: "मुक्कादम नाव",
                           hint: "Enter full name",
                           icon: Icons.person_outline,
-                          validator: (v) => (v == null || v.isEmpty) ? 'Name is required' : null,
                           required: true,
                         ),
                         const SizedBox(height: 16),
                         _buildTextField(
                           controller: _mobileNumbersController,
                           label: "Mobile Number",
+                          subtitle: "मोबाईल नंबर",
                           hint: "10 digit mobile number",
                           icon: Icons.phone_android,
                           keyboardType: TextInputType.phone,
                           maxLength: 10,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          validator: (v) => (v == null || v.length != 10) ? 'Enter valid 10 digit mobile' : null,
                           required: true,
                         ),
                       ],
@@ -1185,28 +1185,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: _warningColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.location_on, size: 16, color: _warningColor),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        "GPS will be auto-captured",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: _warningColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ],
                             )
                                 : Stack(
@@ -1504,8 +1482,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
               const SizedBox(height: 10),
 
               // ── Reference Image Banner (Responsive) ──
-
-              // ── Reference Image Banner (Responsive) ──
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -1557,8 +1533,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                   ),
                 ),
               ),
-
-
 
               const SizedBox(height: 16),
 
@@ -1730,8 +1704,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     );
   }
 
-
-
   Widget _buildSectionCard({
     required String title,
     required String subtitle,
@@ -1822,6 +1794,9 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     );
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // ██  CHANGED: Added optional `subtitle` parameter for Marathi
+  // ══════════════════════════════════════════════════════════════
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -1832,6 +1807,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     bool required = false,
     int? maxLength,
     List<TextInputFormatter>? inputFormatters,
+    String? subtitle,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -1840,8 +1816,20 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
       children: [
         if (label.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(bottom: subtitle != null ? 2 : 8),
             child: _buildLabel(label, required: required, isDark: isDark),
+          ),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: isDark ? Colors.grey[400] : _textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         TextFormField(
           controller: controller,

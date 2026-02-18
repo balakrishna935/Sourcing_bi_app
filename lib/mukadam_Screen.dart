@@ -5,7 +5,6 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:intl/intl.dart';
 import 'package:mukadam_bi/call_stack.dart';
-import 'package:mukadam_bi/plans/allPlansScreen.dart';
 import 'package:mukadam_bi/referral/user_referral_mukadam_screen.dart';
 import 'package:mukadam_bi/seeplan/plan_list_screen.dart';
 import 'package:mukadam_bi/seeplan/villages_list_screen.dart';
@@ -390,13 +389,27 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
       appBar: AppBar(
         toolbarHeight: 80,
         backgroundColor: _primaryColor,
-        title: const Text(
-          "Mukadam Management",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Mukadam Management",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              "मुकादम व्यवस्थापन",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
         centerTitle: false,
         elevation: 0,
@@ -412,6 +425,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
           ),
         ],
       ),
+
       body: _selectedIndex < _pages.length
           ? _pages[_selectedIndex]
           : const Center(child: Text("Page not found")),
@@ -472,37 +486,37 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
           childAspectRatio: 1.05,
           children: [
             _buildActionCard(
-              "Quick\nRegistration",
+              "Quick Registration\nजलद नोंदणी",
               Icons.bolt_rounded,
               _warningColor,
               const QuickMukkadamRegistrationScreen(),
             ),
             _buildActionCard(
-              "See\nPlans",
+              "See Plans\nयोजना पहा",
               Icons.route_rounded,
               _warningColor,
               const VillagePlansDashboard(),
             ),
             _buildActionCard(
-              "Transport\nRegistration",
+              "Transport Registration\nवाहतूक नोंदणी",
               Icons.local_shipping_rounded,
               _errorColor,
               const TransportProviderScreen(),
             ),
             _buildActionCard(
-              "On\nBoarded",
+              "On Boarded\nनोंदणीकृत",
               Icons.people_alt_rounded,
               _successColor,
               const DirectoryScreen(),
             ),
             _buildActionCard(
-              "Mukadam\nVerification",
+              "Mukadam Verification\nमुकादम पडताळणी",
               Icons.verified_user_rounded,
               _accentColor,
               const MukkadamListScreen(),
             ),
             _buildActionCard(
-              "Transport\nVerification",
+              "Transport Verification\nवाहतूक पडताळणी",
               Icons.fact_check_rounded,
               _errorColor,
               const PendingVerificationListScreen(),
@@ -650,14 +664,14 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
       ),
       child: SafeArea(
         child: Container(
-          height: 64,
+          height: 76, // ✅ Increased from 64 to 76
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(Icons.grid_view_rounded, "Home", 0),
+              _navItem(Icons.grid_view_rounded, "Home / होम", 0),
               const SizedBox(width: 60),
-              _navItem(Icons.dialpad_rounded, "Dialpad", 1),
+              _navItem(Icons.dialpad_rounded, "Dialpad / डायलपॅड", 1),
             ],
           ),
         ),
@@ -665,13 +679,14 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
     );
   }
 
+
   Widget _navItem(IconData icon, String label, int index) {
     bool isActive = _selectedIndex == index;
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isActive ? _accentColor.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -682,13 +697,16 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
             Icon(
               icon,
               color: isActive ? _accentColor : _textSecondary,
-              size: 24,
+              size: 22, // ✅ Slightly smaller icon
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               label,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis, // ✅ Prevents overflow
+              maxLines: 1, // ✅ Single line
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10, // ✅ Compact font size
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 color: isActive ? _accentColor : _textSecondary,
               ),
@@ -698,6 +716,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
       ),
     );
   }
+
 }
 
 Widget _buildPlanTile(Map<String, dynamic> plan) {

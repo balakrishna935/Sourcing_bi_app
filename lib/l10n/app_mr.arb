@@ -1,0 +1,15 @@
+{
+  "appTitle": "मुकादम व्यवस्थापन",
+  "quickRegistration": "जलद\nनोंदणी",
+  "seePlans": "योजना\nपहा",
+  "transportRegistration": "वाहतूक\nनोंदणी",
+  "onBoarded": "नोंदणीकृत\nसदस्य",
+  "mukadamVerification": "मुकादम\nपडताळणी",
+  "transportVerification": "वाहतूक\nपडताळणी",
+  "home": "मुख्यपृष्ठ",
+  "dialpad": "डायलपॅड",
+  "logout": "बाहेर पडा",
+  "logoutConfirm": "तुम्हाला खात्रीने बाहेर पडायचे आहे का?",
+  "cancel": "रद्द करा",
+  "pageNotFound": "पृष्ठ सापडले नाही"
+}

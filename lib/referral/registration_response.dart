@@ -12,6 +12,16 @@ class MukkadamDataModell {
   final bool isFaceVerified;
   final bool isFullyVerified;
 
+  String? marathiName;
+
+  String get displayName {
+    if (marathiName != null && marathiName!.isNotEmpty) {
+      return '$mukkadamName / $marathiName';
+    }
+    return mukkadamName;
+  }
+
+
   MukkadamDataModell({
     required this.id,
     required this.mukkadamName,
@@ -25,7 +35,12 @@ class MukkadamDataModell {
     required this.isVoterIdVerified,
     required this.isFaceVerified,
     required this.isFullyVerified,
+    this.marathiName
+
+
   });
+
+
 
   /// At least one verification is done
   bool get isAnyVerified =>

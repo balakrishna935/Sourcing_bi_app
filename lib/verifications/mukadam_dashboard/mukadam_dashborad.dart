@@ -165,7 +165,9 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
         final filteredMukkadams = snapshot.data!.where((m) {
           if (m.isFullyVerified || m.isAllVerified) return false;
           if (_searchQuery.isNotEmpty) {
-            return m.mukkadamName.toLowerCase().contains(_searchQuery);
+            // ✅ UPDATED — Search both English and Marathi names
+            return m.mukkadamName.toLowerCase().contains(_searchQuery) ||
+                (m.marathiName?.toLowerCase().contains(_searchQuery) ?? false);
           }
           return true;
         }).toList();
@@ -246,7 +248,7 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             child: Row(
               children: [
-                // Avatar
+                // Avatar — uses original English name initial
                 CircleAvatar(
                   radius: 22,
                   backgroundColor: _primaryColor.withOpacity(0.08),
@@ -272,7 +274,8 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              mukkadam.mukkadamName,
+                              // ✅ UPDATED — Shows "Name / मराठी नाव"
+                              mukkadam.displayName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 15,

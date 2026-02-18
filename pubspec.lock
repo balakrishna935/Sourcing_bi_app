@@ -249,6 +249,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.3"
+  devlipi:
+    dependency: "direct main"
+    description:
+      name: devlipi
+      sha256: "05a4026647758d03b6b86ade84c5f537769c82b851c47fc3c4cec03a670e7007"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.5"
   dio:
     dependency: "direct main"
     description:
@@ -526,6 +534,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.3"
+  flutter_localizations:
+    dependency: "direct main"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_map:
     dependency: "direct main"
     description:
@@ -1349,6 +1362,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.10.1"
+  translator:
+    dependency: "direct main"
+    description:
+      name: translator
+      sha256: fb28ada8b29931f5142907bac62dda375b14a60a57ec72ed37b78e3e97a7047b
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4+1"
   typed_data:
     dependency: transitive
     description:

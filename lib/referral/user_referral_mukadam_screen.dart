@@ -52,7 +52,6 @@ class _DirectoryScreenState extends State<DirectoryScreen>
 
   void _loadData() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-
     if (userProvider.user != null) {
       setState(() {
         _mukkadamFuture =
@@ -263,8 +262,10 @@ class _DirectoryScreenState extends State<DirectoryScreen>
         }
 
         final filteredMukkadams = snapshot.data!.where((m) {
+          // ✅ UPDATED: Search both English and Marathi names
           bool matchesSearch =
-          m.mukkadamName.toLowerCase().contains(_searchQuery);
+              m.mukkadamName.toLowerCase().contains(_searchQuery) ||
+                  (m.marathiName?.toLowerCase().contains(_searchQuery) ?? false);
           bool isVerified =
               m.isFullyVerified || (m.isPanVerified && m.isAadharVerified);
           return matchesSearch && isVerified;
@@ -546,8 +547,9 @@ class MukkadamCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // ✅ UPDATED: Shows "NAME / मराठी नाव"
                       Text(
-                        mukkadam.mukkadamName,
+                        mukkadam.displayName.toUpperCase(),
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
@@ -555,7 +557,7 @@ class MukkadamCard extends StatelessWidget {
                           letterSpacing: -0.2,
                           height: 1.3,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 5),
@@ -636,7 +638,6 @@ class MukkadamCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-
               ],
             ),
           ),

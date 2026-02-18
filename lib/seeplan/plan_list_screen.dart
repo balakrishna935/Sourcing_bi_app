@@ -35,6 +35,40 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
   static const Color _textPrimary = Color(0xFF1F2937);
   static const Color _textSecondary = Color(0xFF6B7280);
 
+  // ── English / Marathi Translation Map ──
+  static const Map<String, String> _mr = {
+    'Select Day': 'दिवस निवडा',
+    'Villages to Visit': 'भेट देण्याची गावे',
+    'No villages scheduled': 'कोणतीही गावे नियोजित नाहीत',
+    'No visits planned for this day':
+    'या दिवसासाठी कोणतीही भेट नियोजित नाही',
+    'Upcoming Plan': 'आगामी योजना',
+    'Plan access Denied': 'योजना प्रवेश नाकारला',
+    'you cant access that village now':
+    'तुम्ही आता त्या गावात प्रवेश करू शकत नाही',
+    'Access Restricted': 'प्रवेश प्रतिबंधित',
+    'you cant access that now': 'तुम्ही आता त्यात प्रवेश करू शकत नाही',
+    'Visit Completed': 'भेट पूर्ण झाली',
+    'This village visit has already been completed.':
+    'या गावाची भेट आधीच पूर्ण झाली आहे.',
+    'Not Yet Available': 'अजून उपलब्ध नाही',
+    'You can start this visit on or after the planned date.':
+    'तुम्ही नियोजित तारखेला किंवा त्यानंतर ही भेट सुरू करू शकता.',
+    'OK': 'ठीक आहे',
+    'OK, Got It': 'ठीक आहे, समजले',
+    'No daily plans available': 'दैनिक योजना उपलब्ध नाहीत',
+    'This plan has no scheduled visits yet':
+    'या योजनेत अजून कोणतीही भेट नियोजित नाही',
+    'Completed': 'पूर्ण',
+    'In Progress': 'प्रगतीपथावर',
+    'Planned': 'नियोजित',
+  };
+
+  static String _label(String eng) {
+    final mr = _mr[eng];
+    return mr != null ? '$eng / $mr' : eng;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -201,7 +235,7 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _currentPlan.planName,
+              _currentPlan.displayName,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -270,11 +304,11 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
             child: Text(
-              'Select Day',
-              style: TextStyle(
+              _label('Select Day'),
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
                 color: _textPrimary,
@@ -314,8 +348,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                       color: isSelected ? null : Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color:
-                        isSelected ? _primaryColor : Colors.grey.shade200,
+                        color: isSelected
+                            ? _primaryColor
+                            : Colors.grey.shade200,
                         width: isSelected ? 2 : 1.5,
                       ),
                       boxShadow: isSelected
@@ -355,8 +390,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                             style: TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.w900,
-                              color:
-                              isSelected ? Colors.white : _textPrimary,
+                              color: isSelected
+                                  ? Colors.white
+                                  : _textPrimary,
                               height: 1.0,
                             ),
                           ),
@@ -365,8 +401,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                             width: 6,
                             height: 6,
                             decoration: BoxDecoration(
-                              color:
-                              isSelected ? Colors.white : statusColor,
+                              color: isSelected
+                                  ? Colors.white
+                                  : statusColor,
                               shape: BoxShape.circle,
                               boxShadow: isSelected
                                   ? [
@@ -413,9 +450,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Villages to Visit',
-                      style: TextStyle(
+                    Text(
+                      _label('Villages to Visit'),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: _textSecondary,
@@ -476,18 +513,18 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'No villages scheduled',
-            style: TextStyle(
+          Text(
+            _label('No villages scheduled'),
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
               color: _textPrimary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'No visits planned for this day',
-            style: TextStyle(
+          Text(
+            _label('No visits planned for this day'),
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: _textSecondary,
@@ -505,7 +542,7 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
 
     final isPlanned = village.status.toLowerCase() == 'planned';
     final displayStatus = isPlanned
-        ? 'Upcoming Plan'
+        ? _label('Upcoming Plan')
         : (village.statusDisplay.isNotEmpty
         ? village.statusDisplay
         : village.status.replaceAll('_', ' '));
@@ -539,7 +576,10 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                   height: 48,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [statusColor, statusColor.withOpacity(0.7)],
+                      colors: [
+                        statusColor,
+                        statusColor.withOpacity(0.7)
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -568,8 +608,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ✅ CHANGED: Use displayVillage for English / Marathi
                       Text(
-                        village.village,
+                        village.displayVillage,
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w900,
@@ -580,15 +621,11 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 15,
-                            color: _textSecondary,
-                          ),
                           const SizedBox(width: 5),
                           Expanded(
+                            // ✅ CHANGED: Use displayTaluka & displayDistrict
                             child: Text(
-                              '${village.taluka}, ${village.district}',
+                              '${village.displayTaluka}, ${village.displayDistrict}',
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -767,7 +804,8 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         contentPadding: const EdgeInsets.all(20),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -785,19 +823,19 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Plan access Denied',
-              style: TextStyle(
+            Text(
+              _label('Plan access Denied'),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: _textPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'you cant access that village now',
+            Text(
+              _label('you cant access that village now'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: _textSecondary,
@@ -817,9 +855,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                child: Text(
+                  _label('OK'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ),
@@ -833,7 +871,8 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         contentPadding: const EdgeInsets.all(20),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -851,19 +890,19 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Access Restricted',
-              style: TextStyle(
+            Text(
+              _label('Access Restricted'),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: _textPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'you cant access that now',
+            Text(
+              _label('you cant access that now'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: _textSecondary,
@@ -883,9 +922,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                child: Text(
+                  _label('OK'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ),
@@ -899,7 +938,8 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         contentPadding: const EdgeInsets.all(20),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -917,19 +957,19 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Visit Completed',
-              style: TextStyle(
+            Text(
+              _label('Visit Completed'),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: _textPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'This village visit has already been completed.',
+            Text(
+              _label('This village visit has already been completed.'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: _textSecondary,
@@ -949,9 +989,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                child: Text(
+                  _label('OK'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ),
@@ -966,7 +1006,8 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         contentPadding: const EdgeInsets.all(20),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -984,9 +1025,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Not Yet Available',
-              style: TextStyle(
+            Text(
+              _label('Not Yet Available'),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: _textPrimary,
@@ -994,7 +1035,7 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
             ),
             const SizedBox(height: 6),
             Text(
-              'This visit is scheduled for $formattedDate.',
+              'This visit is scheduled for $formattedDate.\nही भेट $formattedDate साठी नियोजित आहे.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
@@ -1014,10 +1055,11 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                   Icon(Icons.info_outline_rounded,
                       color: _warningColor, size: 16),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'You can start this visit on or after the planned date.',
-                      style: TextStyle(
+                      _label(
+                          'You can start this visit on or after the planned date.'),
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: _textSecondary,
@@ -1041,9 +1083,9 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'OK, Got It',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                child: Text(
+                  _label('OK, Got It'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ),
@@ -1084,18 +1126,18 @@ class _DailyPlansScreenState extends State<DailyPlansScreen> with RouteAware {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'No daily plans available',
-              style: TextStyle(
+            Text(
+              _label('No daily plans available'),
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: _textPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'This plan has no scheduled visits yet',
-              style: TextStyle(
+            Text(
+              _label('This plan has no scheduled visits yet'),
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: _textSecondary,

@@ -46,13 +46,23 @@ class EntityDetails {
   final String baseLocation;
   final String? vehicleType;
 
-  // ✅ NEW: Verification flags from entity-level API response
   final bool isFullyVerified;
   final bool isAadhaarVerified;
   final bool isPanVerified;
   final bool isRcVerified;
   final bool isDlVerified;
   final bool isVoterIdVerified;
+
+  // ✅ NEW: Marathi translated name (set after fetch)
+  String? marathiName;
+
+  // ✅ NEW: Bilingual display — "English / मराठी"
+  String get displayName {
+    if (marathiName != null && marathiName!.isNotEmpty) {
+      return '$name / $marathiName';
+    }
+    return name;
+  }
 
   EntityDetails({
     required this.id,
@@ -66,6 +76,7 @@ class EntityDetails {
     required this.isRcVerified,
     required this.isDlVerified,
     required this.isVoterIdVerified,
+    this.marathiName,
   });
 
   factory EntityDetails.fromJson(Map<String, dynamic> json) {

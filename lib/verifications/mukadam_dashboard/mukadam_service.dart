@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:devlipi/devlipi.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:translator/translator.dart';
 import 'mukkadam_data_model.dart';
 
 class MukkadamService {
@@ -14,6 +16,20 @@ class MukkadamService {
       "https://supply.bharatintelligence.ai/api/dashboard/user";
   static const String detailUrl =
       "https://supply.bharatintelligence.ai/api/mukkadam";
+
+  final GoogleTranslator _translator = GoogleTranslator();
+
+  Future<String> _toMarathi(String text) async {
+    if (text.trim().isEmpty) return text;
+    try {
+      final result = await _translator.translate(text, from: 'en', to: 'mr');
+      if (result.text.toLowerCase() != text.toLowerCase()) {
+        return result.text;
+      }
+    } catch (_) {}
+    return Devlipi.transliterate(text);
+  }
+
 
   Future<String?> uploadFileToS3({
     required String filePath,
@@ -70,9 +86,21 @@ class MukkadamService {
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
       final List<dynamic> mukkadamList = data['entities'] ?? [];
-      return mukkadamList
+      List<MukkadamDataModel> mukkadams = mukkadamList
           .map((json) => MukkadamDataModel.fromJson(json))
           .toList();
+
+      for (var m in mukkadams) {
+        if (m.mukkadamName.isNotEmpty) {
+          m.marathiName = await _toMarathi(m.mukkadamName);
+        }
+      }
+
+      return mukkadams;
+
+
+
+
     } else {
       throw Exception('Failed to load mukkadams');
     }

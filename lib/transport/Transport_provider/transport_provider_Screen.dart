@@ -36,7 +36,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
   final DataEntryService _dataEntryService = DataEntryService();
   final ImagePicker _picker = ImagePicker();
 
-  // ── Professional Color Palette (matching QuickMukkadamRegistrationScreen) ──
+  // ── Professional Color Palette ──
   static const Color _primaryColor = Color(0xFF1E3A5F);
   static const Color _accentColor = Color(0xFF3B82F6);
   static const Color _successColor = Color(0xFF10B981);
@@ -135,13 +135,25 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const Text(
-                  'Choose an option',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _textPrimary,
-                  ),
+                Column(
+                  children: [
+                    const Text(
+                      'Choose an option',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: _textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'एक पर्याय निवडा',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: _textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 ListTile(
@@ -153,9 +165,9 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                     ),
                     child: const Icon(Icons.camera_alt, color: _primaryColor),
                   ),
-                  title: const Text('Camera',
+                  title: const Text('Camera / कॅमेरा',
                       style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Take a photo'),
+                  subtitle: const Text('Take a photo / फोटो काढा'),
                   onTap: () {
                     Navigator.of(context).pop();
                     _pickImage(type, ImageSource.camera);
@@ -168,12 +180,13 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                       color: _primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.photo_library,
-                        color: _primaryColor),
+                    child:
+                    const Icon(Icons.photo_library, color: _primaryColor),
                   ),
-                  title: const Text('Gallery',
+                  title: const Text('Gallery / गॅलरी',
                       style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Choose from gallery'),
+                  subtitle:
+                  const Text('Choose from gallery / गॅलरीतून निवडा'),
                   onTap: () {
                     Navigator.of(context).pop();
                     _pickImage(type, ImageSource.gallery);
@@ -333,13 +346,14 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
           _selectedDistrict == null ||
           _selectedTaluka == null ||
           _selectedVillage == null) {
-        _showSnackBar("Please select all location fields", isError: true);
+        _showSnackBar("Please select all location fields / कृपया सर्व स्थान फील्ड निवडा",
+            isError: true);
         return;
       }
 
-      // Validate profile photo (mandatory)
       if (_profilePhotoPath == null) {
-        _showSnackBar("Profile photo is mandatory", isError: true);
+        _showSnackBar("Profile photo is mandatory / प्रोफाइल फोटो आवश्यक आहे",
+            isError: true);
         return;
       }
 
@@ -379,7 +393,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
           dlPath: _dlPath,
           rcPath: _rcPath,
         );
-        _showSnackBar('Provider created successfully!');
+        _showSnackBar('Provider created successfully! / प्रदाता यशस्वीरित्या तयार झाला!');
         Navigator.pop(context);
       } catch (e) {
         _showSnackBar('Error: $e', isError: true);
@@ -416,10 +430,11 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                         _buildTextField(
                           controller: _nameController,
                           label: 'Provider Name',
-                          hint: 'Enter full name',
+                          labelMarathi: 'प्रदात्याचे नाव',
+                          hint: 'Enter full name / पूर्ण नाव प्रविष्ट करा',
                           icon: Icons.badge_outlined,
                           validator: (v) => (v == null || v.isEmpty)
-                              ? 'Name is required'
+                              ? 'Name is required / नाव आवश्यक आहे'
                               : null,
                           required: true,
                           isDark: isDark,
@@ -428,7 +443,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                         _buildTextField(
                           controller: _contactNumberController,
                           label: 'Contact Number',
-                          hint: '10 digit mobile number',
+                          labelMarathi: 'संपर्क क्रमांक',
+                          hint: '10 digit mobile number / १० अंकी मोबाइल क्रमांक',
                           icon: Icons.phone_android,
                           keyboardType: TextInputType.phone,
                           maxLength: 10,
@@ -436,7 +452,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           validator: (v) => (v == null || v.length != 10)
-                              ? 'Enter valid 10 digit mobile'
+                              ? 'Enter valid 10 digit mobile / वैध १० अंकी मोबाइल प्रविष्ट करा'
                               : null,
                           required: true,
                           isDark: isDark,
@@ -449,7 +465,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                   // Location Details Card
                   _buildSectionCard(
                     title: 'Location Details',
-                    subtitle: 'स्थान माहिती',
+                    subtitle: 'स्थान तपशील',
                     icon: Icons.location_on,
                     isDark: isDark,
                     child: Column(
@@ -459,7 +475,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           items: _states,
                           displayKey: 'state_name_english',
                           label: 'State',
-                          hint: 'Select State',
+                          labelMarathi: 'राज्य',
+                          hint: 'Select State / राज्य निवडा',
                           icon: Icons.public,
                           onChanged: (val) {
                             setState(() => _selectedState = val);
@@ -475,7 +492,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           items: _districts,
                           displayKey: 'districtnameenglish',
                           label: 'District',
-                          hint: 'Select District',
+                          labelMarathi: 'जिल्हा',
+                          hint: 'Select District / जिल्हा निवडा',
                           icon: Icons.map,
                           onChanged: (val) {
                             setState(() => _selectedDistrict = val);
@@ -492,7 +510,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           items: _talukas,
                           displayKey: 'subdistrictnameenglish',
                           label: 'Taluka',
-                          hint: 'Select Taluka',
+                          labelMarathi: 'तालुका',
+                          hint: 'Select Taluka / तालुका निवडा',
                           icon: Icons.location_city,
                           onChanged: (val) {
                             setState(() => _selectedTaluka = val);
@@ -509,7 +528,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           items: _villages,
                           displayKey: 'villagenameenglish',
                           label: 'Village',
-                          hint: 'Select Village',
+                          labelMarathi: 'गाव',
+                          hint: 'Select Village / गाव निवडा',
                           icon: Icons.home,
                           onChanged: (val) =>
                               setState(() => _selectedVillage = val),
@@ -532,16 +552,18 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                         _buildTextField(
                           controller: _capacityController,
                           label: 'Capacity',
-                          hint: 'Enter capacity',
+                          labelMarathi: 'क्षमता',
+                          hint: 'Enter capacity / क्षमता प्रविष्ट करा',
                           icon: Icons.fitness_center_outlined,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           validator: (v) {
-                            if (v == null || v.isEmpty) return 'Required';
+                            if (v == null || v.isEmpty)
+                              return 'Required / आवश्यक';
                             if (int.tryParse(v) == null)
-                              return 'Invalid number';
+                              return 'Invalid number / अवैध क्रमांक';
                             return null;
                           },
                           required: true,
@@ -553,6 +575,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                         _buildTextField(
                           controller: _vehicleController,
                           label: 'Vehicle Number',
+                          labelMarathi: 'वाहन क्रमांक',
                           hint: 'e.g. MH12AB1234',
                           icon: Icons.confirmation_number_outlined,
                           maxLength: 15,
@@ -563,7 +586,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           ],
                           validator: (v) {
                             if (v != null && v.isNotEmpty && v.length < 6) {
-                              return 'Enter a valid vehicle number';
+                              return 'Enter a valid vehicle number / वैध वाहन क्रमांक प्रविष्ट करा';
                             }
                             return null;
                           },
@@ -573,6 +596,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                         _buildTextField(
                           controller: _dlNumberController,
                           label: 'DL Number',
+                          labelMarathi: 'डीएल क्रमांक',
                           hint: 'e.g. MH0120190001234',
                           icon: Icons.assignment_ind_outlined,
                           maxLength: 16,
@@ -583,7 +607,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           ],
                           validator: (v) {
                             if (v != null && v.isNotEmpty && v.length < 10) {
-                              return 'Enter a valid DL number (10-16 chars)';
+                              return 'Enter a valid DL number (10-16 chars) / वैध डीएल क्रमांक प्रविष्ट करा';
                             }
                             return null;
                           },
@@ -596,7 +620,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                             child: _buildTextField(
                               controller: _dobController,
                               label: 'Driver DOB',
-                              hint: 'Select date',
+                              labelMarathi: 'चालकाची जन्मतारीख',
+                              hint: 'Select date / तारीख निवडा',
                               icon: Icons.calendar_today_outlined,
                               isDark: isDark,
                             ),
@@ -606,14 +631,15 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                         _buildTextField(
                           controller: _maxDistanceController,
                           label: 'Max Distance (KM)',
-                          hint: 'Enter maximum distance',
+                          labelMarathi: 'कमाल अंतर (किमी)',
+                          hint: 'Enter maximum distance / कमाल अंतर प्रविष्ट करा',
                           icon: Icons.social_distance_outlined,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Required' : null,
+                          (v == null || v.isEmpty) ? 'Required / आवश्यक' : null,
                           required: true,
                           isDark: isDark,
                         ),
@@ -631,12 +657,14 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSubsectionHeader('Aadhar Details', isDark),
+                        _buildSubsectionHeader(
+                            'Aadhar Details', 'आधार तपशील', isDark),
                         const SizedBox(height: 12),
                         _buildTextField(
                           controller: _aadharNumberController,
                           label: '',
-                          hint: 'Enter 12-digit Aadhar Number',
+                          labelMarathi: '',
+                          hint: 'Enter 12-digit Aadhar Number / १२ अंकी आधार क्रमांक प्रविष्ट करा',
                           icon: Icons.fingerprint_outlined,
                           keyboardType: TextInputType.number,
                           maxLength: 12,
@@ -645,19 +673,21 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           ],
                           validator: (v) {
                             if (v != null && v.isNotEmpty && v.length != 12) {
-                              return 'Aadhar must be 12 digits';
+                              return 'Aadhar must be 12 digits / आधार १२ अंकी असणे आवश्यक';
                             }
                             return null;
                           },
                           isDark: isDark,
                         ),
                         const SizedBox(height: 24),
-                        _buildSubsectionHeader('PAN Details', isDark),
+                        _buildSubsectionHeader(
+                            'PAN Details', 'पॅन तपशील', isDark),
                         const SizedBox(height: 12),
                         _buildTextField(
                           controller: _panNumberController,
                           label: '',
-                          hint: 'Enter PAN (e.g., ABCDE1234F)',
+                          labelMarathi: '',
+                          hint: 'Enter PAN (e.g., ABCDE1234F) / पॅन प्रविष्ट करा',
                           icon: Icons.credit_card_outlined,
                           maxLength: 10,
                           inputFormatters: [
@@ -668,12 +698,12 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           validator: (v) {
                             if (v != null && v.isNotEmpty) {
                               if (v.length != 10) {
-                                return 'PAN must be 10 characters';
+                                return 'PAN must be 10 characters / पॅन १० अक्षरांचा असावा';
                               }
                               final panRegex =
                               RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$');
                               if (!panRegex.hasMatch(v)) {
-                                return 'Invalid PAN format (e.g., ABCDE1234F)';
+                                return 'Invalid PAN format (e.g., ABCDE1234F) / अवैध पॅन स्वरूप';
                               }
                             }
                             return null;
@@ -681,12 +711,14 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           isDark: isDark,
                         ),
                         const SizedBox(height: 24),
-                        _buildSubsectionHeader('Voter ID Details', isDark),
+                        _buildSubsectionHeader(
+                            'Voter ID Details', 'मतदार ओळखपत्र तपशील', isDark),
                         const SizedBox(height: 12),
                         _buildTextField(
                           controller: _voterIdController,
                           label: '',
-                          hint: 'Enter Voter ID (e.g., ABC1234567)',
+                          labelMarathi: '',
+                          hint: 'Enter Voter ID (e.g., ABC1234567) / मतदार ओळखपत्र प्रविष्ट करा',
                           icon: Icons.how_to_vote_outlined,
                           maxLength: 10,
                           inputFormatters: [
@@ -696,7 +728,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                           ],
                           validator: (v) {
                             if (v != null && v.isNotEmpty && v.length != 10) {
-                              return 'Voter ID must be 10 characters';
+                              return 'Voter ID must be 10 characters / मतदार ओळखपत्र १० अक्षरांचे असावे';
                             }
                             return null;
                           },
@@ -716,26 +748,32 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel('Profile Photo *',
-                            isDark: isDark, required: true),
+                        _buildLabel('Profile Photo * / प्रोफाइल फोटो *',
+                            isDark: isDark, required: false),
                         const SizedBox(height: 8),
-                        _buildDocumentUploadCard('Profile Photo', 'profile',
+                        _buildDocumentUploadCard(
+                            'Profile Photo', 'प्रोफाइल फोटो', 'profile',
                             _profilePhotoPath, isDark),
                         const SizedBox(height: 16),
                         _buildDocumentUploadCard(
-                            'Aadhar Card', 'aadhar', _aadharCardPath, isDark),
+                            'Aadhar Card', 'आधार कार्ड', 'aadhar',
+                            _aadharCardPath, isDark),
                         const SizedBox(height: 16),
                         _buildDocumentUploadCard(
-                            'PAN Card', 'pan', _panCardPath, isDark),
+                            'PAN Card', 'पॅन कार्ड', 'pan',
+                            _panCardPath, isDark),
                         const SizedBox(height: 16),
-                        _buildDocumentUploadCard('Voter ID Card', 'voter',
+                        _buildDocumentUploadCard(
+                            'Voter ID Card', 'मतदार ओळखपत्र', 'voter',
                             _voterIdPath, isDark),
                         const SizedBox(height: 16),
                         _buildDocumentUploadCard(
-                            'Driving License', 'dl', _dlPath, isDark),
+                            'Driving License', 'वाहन चालक परवाना', 'dl',
+                            _dlPath, isDark),
                         const SizedBox(height: 16),
                         _buildDocumentUploadCard(
-                            'RC Book', 'rc', _rcPath, isDark),
+                            'RC Book', 'आरसी पुस्तक', 'rc',
+                            _rcPath, isDark),
                       ],
                     ),
                   ),
@@ -754,7 +792,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                         _buildTextField(
                           controller: _notesController,
                           label: 'Notes',
-                          hint: 'Enter any specific requirements...',
+                          labelMarathi: 'टिपा',
+                          hint: 'Enter any specific requirements... / कोणत्याही विशिष्ट आवश्यकता प्रविष्ट करा...',
                           icon: Icons.notes_outlined,
                           maxLines: 3,
                           isDark: isDark,
@@ -792,7 +831,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Please wait...',
+                        'Please wait... / कृपया प्रतीक्षा करा...',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -842,7 +881,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
       elevation: 0,
       iconTheme: const IconThemeData(color: Colors.white),
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_rounded, size: 22, color: Colors.white),
+        icon: const Icon(Icons.arrow_back_rounded,
+            size: 22, color: Colors.white),
         onPressed: () => Navigator.pop(context),
       ),
     );
@@ -934,17 +974,19 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
           if (required)
             const TextSpan(
               text: ' *',
-              style: TextStyle(
-                  color: _errorColor, fontWeight: FontWeight.bold),
+              style:
+              TextStyle(color: _errorColor, fontWeight: FontWeight.bold),
             ),
         ],
       ),
     );
   }
 
+  /// Updated _buildTextField with optional labelMarathi for bilingual label
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
+    String labelMarathi = '',
     required String hint,
     required IconData icon,
     required bool isDark,
@@ -961,7 +1003,24 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
         if (label.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: _buildLabel(label, required: required, isDark: isDark),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLabel(label, required: required, isDark: isDark),
+                if (labelMarathi.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      labelMarathi,
+                      style: GoogleFonts.inter(
+                        color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         TextFormField(
           controller: controller,
@@ -987,16 +1046,14 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : _borderColor),
+                  color:
+                  isDark ? const Color(0xFF334155) : _borderColor),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : _borderColor),
+                  color:
+                  isDark ? const Color(0xFF334155) : _borderColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1013,19 +1070,21 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
               borderSide:
               const BorderSide(color: _errorColor, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 16),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],
     );
   }
 
+  /// Updated _buildSearchableDropdown with labelMarathi for bilingual label
   Widget _buildSearchableDropdown({
     required Map<String, dynamic>? value,
     required List<Map<String, dynamic>> items,
     required String displayKey,
     required String label,
+    String labelMarathi = '',
     required String hint,
     required IconData icon,
     required void Function(Map<String, dynamic>?) onChanged,
@@ -1038,7 +1097,24 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
         if (label.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: _buildLabel(label, required: required, isDark: isDark),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLabel(label, required: required, isDark: isDark),
+                if (labelMarathi.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      labelMarathi,
+                      style: GoogleFonts.inter(
+                        color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         DropdownSearch<Map<String, dynamic>>(
           items: (filter, loadProps) => items,
@@ -1094,7 +1170,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
             showSearchBox: true,
             searchFieldProps: TextFieldProps(
               decoration: InputDecoration(
-                hintText: "Search...",
+                hintText: "Search... / शोधा...",
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8)),
@@ -1108,7 +1184,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
             ),
           ),
           validator: (v) =>
-          (required && v == null) ? 'This field is required' : null,
+          (required && v == null) ? 'This field is required / हे फील्ड आवश्यक आहे' : null,
         ),
       ],
     );
@@ -1120,14 +1196,31 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: _buildLabel('Vehicle Type', required: true, isDark: isDark),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildLabel('Vehicle Type', required: true, isDark: isDark),
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  'वाहन प्रकार',
+                  style: GoogleFonts.inter(
+                    color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         DropdownButtonFormField<String>(
-          validator: (v) =>
-          (v == null || v.isEmpty) ? 'Vehicle type is required' : null,
+          validator: (v) => (v == null || v.isEmpty)
+              ? 'Vehicle type is required / वाहन प्रकार आवश्यक आहे'
+              : null,
           isExpanded: true,
           decoration: InputDecoration(
-            hintText: 'Select type',
+            hintText: 'Select type / प्रकार निवडा',
             hintStyle: TextStyle(
                 color: isDark
                     ? Colors.grey[500]
@@ -1139,24 +1232,22 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : _borderColor),
+                  color:
+                  isDark ? const Color(0xFF334155) : _borderColor),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : _borderColor),
+                  color:
+                  isDark ? const Color(0xFF334155) : _borderColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
               const BorderSide(color: _accentColor, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 16),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
           value: _vehicleTypeController.text.isEmpty
               ? null
@@ -1178,8 +1269,9 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
     );
   }
 
+  /// Updated _buildDocumentUploadCard with Marathi label
   Widget _buildDocumentUploadCard(
-      String label, String documentType, String? path, bool isDark) {
+      String label, String labelMarathi, String documentType, String? path, bool isDark) {
     final bool hasFile = path != null;
     return Container(
       decoration: BoxDecoration(
@@ -1237,11 +1329,25 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                                     : _textPrimary),
                               ),
                             ),
+                            Text(
+                              hasFile
+                                  ? '$labelMarathi अपलोड झाले'
+                                  : '$labelMarathi अपलोड करा',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: hasFile
+                                    ? _successColor.withOpacity(0.8)
+                                    : (isDark
+                                    ? Colors.grey[500]
+                                    : _textSecondary),
+                              ),
+                            ),
                             if (!hasFile)
                               Text(
-                                'Tap to select',
+                                'Tap to select / निवडण्यासाठी टॅप करा',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: isDark
                                       ? Colors.grey[500]
                                       : _textSecondary,
@@ -1275,8 +1381,8 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
             color: Colors.transparent,
             child: InkWell(
               onTap: () => _pickImage(documentType, ImageSource.camera),
-              borderRadius: const BorderRadius.horizontal(
-                  right: Radius.circular(12)),
+              borderRadius:
+              const BorderRadius.horizontal(right: Radius.circular(12)),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 child: const Icon(
@@ -1292,25 +1398,40 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
     );
   }
 
-  Widget _buildSubsectionHeader(String title, bool isDark) {
+  /// Updated _buildSubsectionHeader with Marathi subtitle
+  Widget _buildSubsectionHeader(
+      String title, String titleMarathi, bool isDark) {
     return Row(
       children: [
         Container(
           width: 4,
-          height: 20,
+          height: 28,
           decoration: BoxDecoration(
             color: _primaryColor,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : _textPrimary,
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : _textPrimary,
+              ),
+            ),
+            Text(
+              titleMarathi,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isDark ? Colors.grey[500] : _textSecondary,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1356,7 +1477,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Active Status',
+                    'Active Status / सक्रिय स्थिती',
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -1365,12 +1486,10 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
                   ),
                   Text(
                     _isActive
-                        ? 'Provider is ready for orders'
-                        : 'Provider is inactive',
+                        ? 'Provider is ready for orders / प्रदाता ऑर्डरसाठी तयार आहे'
+                        : 'Provider is inactive / प्रदाता निष्क्रिय आहे',
                     style: TextStyle(
-                        color: isDark
-                            ? Colors.grey[400]
-                            : _textSecondary,
+                        color: isDark ? Colors.grey[400] : _textSecondary,
                         fontSize: 12),
                   ),
                 ],
@@ -1390,7 +1509,7 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
   Widget _buildSubmitButton(bool isDark) {
     return Container(
       width: double.infinity,
-      height: 56,
+      height: 60,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [_primaryColor, _accentColor],
@@ -1416,18 +1535,31 @@ class _TransportProviderScreenState extends State<TransportProviderScreen> {
               borderRadius: BorderRadius.circular(14)),
           disabledBackgroundColor: Colors.grey[400],
         ),
-        child: Row(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_circle_outline, size: 24),
-            const SizedBox(width: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add_circle_outline, size: 24),
+                const SizedBox(width: 12),
+                Text(
+                  'Create Transport Provider',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
             Text(
-              'Create Transport Provider',
+              'वाहतूक प्रदाता तयार करा',
               style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+                color: Colors.white.withOpacity(0.85),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

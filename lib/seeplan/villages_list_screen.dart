@@ -1,9 +1,15 @@
+// lib/seeplan/villageslistscreen.dart
+// FULL CODE — VillagePlansDashboard with LanguageProvider + SeePlanStrings
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import 'package:mukadam_bi/seeplan/plan_Service_file.dart';
 import 'package:mukadam_bi/seeplan/plan_list_screen.dart';
 import 'package:mukadam_bi/seeplan/plan_service_model.dart';
+import 'package:provider/provider.dart';
+
+import '../language_jsons/seeplan_strings.dart';
+import '../provider/language_provider.dart';
 
 class VillagePlansDashboard extends StatefulWidget {
   const VillagePlansDashboard({super.key});
@@ -14,103 +20,69 @@ class VillagePlansDashboard extends StatefulWidget {
 
 class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     with SingleTickerProviderStateMixin {
-  final PlanService _planService = PlanService();
+  final PlanService planService = PlanService();
+  List<VillageVisitPlan> plans = [];
+  bool isLoading = true;
+  String errorMessage = '';
 
-  List<VillageVisitPlan> _plans = [];
-  bool _isLoading = true;
-  String _errorMessage = '';
-
-  // Filter states - single unified filter (mutually exclusive)
-  // Possible values: 'today', 'all', 'planned', 'in_progress', 'completed'
-  String _selectedFilter = 'today'; // DEFAULT set to 'today'
-  DateTime? _startDate;
-  DateTime? _endDate;
-
-  bool isMarathi = false;       // ✅ ADD
-  bool isTranslating = false;   // ✅ ADD
-
-
+  // Filter states
+  String selectedFilter = 'today';
+  DateTime? startDate;
+  DateTime? endDate;
 
   // Stats
-  int _totalPlans = 0;
-  int _completedPlans = 0;
-  int _inProgressPlans = 0;
-  int _plannedPlans = 0;
-  int _totalVillages = 0;
+  int totalPlans = 0;
+  int completedPlans = 0;
+  int inProgressPlans = 0;
+  int plannedPlans = 0;
+  int totalVillages = 0;
 
+  // ---- Color Palette (matching MukadamDashboard) ----
+  static const Color primaryColor = Color(0xFF1E3A5F);
+  static const Color accentColor = Color(0xFF3B82F6);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFF59E0B);
+  static const Color errorColor = Color(0xFFEF4444);
+  static const Color purpleColor = Color(0xFF8B5CF6);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardColor = Colors.white;
+  static const Color textPrimary = Color(0xFF1F2937);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color borderColor = Color(0xFFE5E7EB);
+  static const Color dividerColor = Color(0xFFF3F4F6);
 
-
-  static const Map<String, String> _mr = {
-    'Today': 'आज',
-    'All': 'सर्व',
-    'Upcoming': 'आगामी',
-    'Completed': 'पूर्ण',
-    'In Progress': 'प्रगतीपथावर',
-    'Overview': 'आढावा',
-    'Filters': 'फिल्टर',
-    'Village Visit Plans': 'गाव भेट योजना',
-    'Plans': 'योजना',
-    'Villages': 'गावे',
-    'Days': 'दिवस',
-    'Upcoming Plan': 'आगामी योजना',
-    'No Plans Found': 'योजना सापडल्या नाहीत',
-    'Something went wrong': 'काहीतरी चूक झाली',
-    'Try Again': 'पुन्हा प्रयत्न करा',
-    'Clear Filters': 'फिल्टर काढा',
-  };
-
-
-  static String _label(String eng) {
-    final mr = _mr[eng];
-    return mr != null ? '$eng / $mr' : eng;
+  // ---- Helper: get translated string ----
+  String _t(String key) {
+    final lang = context.read<LanguageProvider>().language;
+    return SeePlanStrings.get(key, lang);
   }
-
-
-
-
-
-  // ── Professional Color Palette (matching MukadamDashboard) ──
-  static const Color _primaryColor = Color(0xFF1E3A5F);
-  static const Color _accentColor = Color(0xFF3B82F6);
-  static const Color _successColor = Color(0xFF10B981);
-  static const Color _warningColor = Color(0xFFF59E0B);
-  static const Color _errorColor = Color(0xFFEF4444);
-  static const Color _purpleColor = Color(0xFF8B5CF6);
-  static const Color _backgroundColor = Color(0xFFF8FAFC);
-  static const Color _cardColor = Colors.white;
-  static const Color _textPrimary = Color(0xFF1F2937);
-  static const Color _textSecondary = Color(0xFF6B7280);
-  static const Color _borderColor = Color(0xFFE5E7EB);
-  static const Color _dividerColor = Color(0xFFF3F4F6);
 
   @override
   void initState() {
     super.initState();
-    _loadPlans();
+    loadPlans();
   }
 
-  Future<void> _loadPlans() async {
+  // ======================== DATA LOADING ========================
+  Future<void> loadPlans() async {
     setState(() {
-      _isLoading = true;
-      _errorMessage = '';
+      isLoading = true;
+      errorMessage = '';
     });
-
     try {
-      // Determine API status parameter based on selected filter
       String? apiStatus;
-      if (_selectedFilter != 'today' && _selectedFilter != 'all') {
-        apiStatus = _selectedFilter;
+      if (selectedFilter != 'today' && selectedFilter != 'all') {
+        apiStatus = selectedFilter;
       }
 
-      // Only use date filters if NOT 'today' filter
-      String? dateFrom = (_selectedFilter != 'today' && _startDate != null)
-          ? DateFormat('yyyy-MM-dd').format(_startDate!)
+      String? dateFrom = selectedFilter != 'today' && startDate != null
+          ? DateFormat('yyyy-MM-dd').format(startDate!)
           : null;
-      String? dateTo = (_selectedFilter != 'today' && _endDate != null)
-          ? DateFormat('yyyy-MM-dd').format(_endDate!)
+      String? dateTo = selectedFilter != 'today' && endDate != null
+          ? DateFormat('yyyy-MM-dd').format(endDate!)
           : null;
 
-      final plans = await _planService.fetchVisitPlans(
+      final plans = await planService.fetchVisitPlans(
         status: apiStatus,
         dateFrom: dateFrom,
         dateTo: dateTo,
@@ -118,11 +90,9 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
 
       List<VillageVisitPlan> filteredPlans;
 
-      // If 'today' filter is active, filter plans for today
-      if (_selectedFilter == 'today') {
+      if (selectedFilter == 'today') {
         final today = DateTime.now();
         final todayDateOnly = DateTime(today.year, today.month, today.day);
-
         filteredPlans = plans.where((plan) {
           try {
             final planStartDate = DateTime.parse(plan.startDate);
@@ -131,8 +101,6 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                 planStartDate.year, planStartDate.month, planStartDate.day);
             final planEndDateOnly = DateTime(
                 planEndDate.year, planEndDate.month, planEndDate.day);
-
-            // Check if today falls within the plan's date range
             return (todayDateOnly.isAtSameMomentAs(planStartDateOnly) ||
                 todayDateOnly.isAfter(planStartDateOnly)) &&
                 (todayDateOnly.isAtSameMomentAs(planEndDateOnly) ||
@@ -141,67 +109,46 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             return false;
           }
         }).toList();
-      } else if (_selectedFilter == 'planned') {
-        // ── CHANGE 3: Upcoming filter - only show plans with startDate >= today ──
+      } else if (selectedFilter == 'planned') {
         final today = DateTime.now();
         final todayDateOnly = DateTime(today.year, today.month, today.day);
-
         filteredPlans = plans.where((plan) {
           try {
             final planStartDate = DateTime.parse(plan.startDate);
             final planStartDateOnly = DateTime(
                 planStartDate.year, planStartDate.month, planStartDate.day);
-
-            // Only show plans whose start date is today or in the future
-            if (planStartDateOnly.isBefore(todayDateOnly)) {
-              return false;
+            if (planStartDateOnly.isBefore(todayDateOnly)) return false;
+            if (startDate != null) {
+              final filterFrom =
+              DateTime(startDate!.year, startDate!.month, startDate!.day);
+              if (planStartDateOnly.isBefore(filterFrom)) return false;
             }
-
-            if (_startDate != null) {
-              final filterFrom = DateTime(
-                  _startDate!.year, _startDate!.month, _startDate!.day);
-              if (planStartDateOnly.isBefore(filterFrom)) {
-                return false;
-              }
+            if (endDate != null) {
+              final filterTo =
+              DateTime(endDate!.year, endDate!.month, endDate!.day);
+              if (planStartDateOnly.isAfter(filterTo)) return false;
             }
-
-            if (_endDate != null) {
-              final filterTo = DateTime(
-                  _endDate!.year, _endDate!.month, _endDate!.day);
-              if (planStartDateOnly.isAfter(filterTo)) {
-                return false;
-              }
-            }
-
             return true;
           } catch (_) {
             return true;
           }
         }).toList();
       } else {
-        // Original date range filtering for 'all', 'completed', 'in_progress'
         filteredPlans = plans.where((plan) {
           try {
             final planStartDate = DateTime.parse(plan.startDate);
             final planStartDateOnly = DateTime(
                 planStartDate.year, planStartDate.month, planStartDate.day);
-
-            if (_startDate != null) {
-              final filterFrom = DateTime(
-                  _startDate!.year, _startDate!.month, _startDate!.day);
-              if (planStartDateOnly.isBefore(filterFrom)) {
-                return false;
-              }
+            if (startDate != null) {
+              final filterFrom =
+              DateTime(startDate!.year, startDate!.month, startDate!.day);
+              if (planStartDateOnly.isBefore(filterFrom)) return false;
             }
-
-            if (_endDate != null) {
-              final filterTo = DateTime(
-                  _endDate!.year, _endDate!.month, _endDate!.day);
-              if (planStartDateOnly.isAfter(filterTo)) {
-                return false;
-              }
+            if (endDate != null) {
+              final filterTo =
+              DateTime(endDate!.year, endDate!.month, endDate!.day);
+              if (planStartDateOnly.isAfter(filterTo)) return false;
             }
-
             return true;
           } catch (_) {
             return true;
@@ -209,16 +156,12 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
         }).toList();
       }
 
-      // ── CHANGE 2: For 'today' filter, sort completed plans to the bottom ──
-      if (_selectedFilter == 'today') {
+      // Sort: for today filter, completed goes to the bottom
+      if (selectedFilter == 'today') {
         filteredPlans.sort((a, b) {
-          // Completed plans go to the bottom
           final aCompleted = a.status == 'completed' ? 1 : 0;
           final bCompleted = b.status == 'completed' ? 1 : 0;
-          if (aCompleted != bCompleted) {
-            return aCompleted.compareTo(bCompleted);
-          }
-          // Within same status group, sort by start date
+          if (aCompleted != bCompleted) return aCompleted.compareTo(bCompleted);
           try {
             final dateA = DateTime.parse(a.startDate);
             final dateB = DateTime.parse(b.startDate);
@@ -242,162 +185,151 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
       _calculateStats(filteredPlans);
 
       setState(() {
-        _plans = filteredPlans;
-        _isLoading = false;
+        this.plans = filteredPlans;
+        isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
+        errorMessage = e.toString();
+        isLoading = false;
       });
     }
   }
 
   void _calculateStats(List<VillageVisitPlan> plans) {
-    _totalPlans = plans.length;
-    _completedPlans = plans.where((p) => p.status == 'completed').length;
-    _inProgressPlans = plans.where((p) => p.status == 'in_progress').length;
-    _plannedPlans = plans.where((p) => p.status == 'planned').length;
-    _totalVillages = plans.fold(
+    totalPlans = plans.length;
+    completedPlans = plans.where((p) => p.status == 'completed').length;
+    inProgressPlans = plans.where((p) => p.status == 'inprogress').length;
+    plannedPlans = plans.where((p) => p.status == 'planned').length;
+    totalVillages = plans.fold(
         0,
             (sum, plan) =>
         sum +
-            plan.dailyPlans
-                .fold(0, (s, dp) => s + dp.villageVisits.length));
+            plan.dailyPlans.fold(0, (s, dp) => s + dp.villageVisits.length));
   }
 
-  // Single unified filter handler - only one filter active at a time
-  void _onFilterChanged(String filter) {
+  void onFilterChanged(String filter) {
     setState(() {
-      _selectedFilter = filter;
+      selectedFilter = filter;
     });
-    _loadPlans();
+    loadPlans();
   }
 
-  Future<void> _selectStartDate() async {
+  // ======================== DATE PICKERS ========================
+  Future<void> selectStartDate() async {
+    final lang = context.read<LanguageProvider>().language;
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _startDate ?? DateTime.now(),
+      initialDate: startDate ?? DateTime.now(),
       firstDate: DateTime(2024),
       lastDate: DateTime(2030),
-      helpText: 'Select Start Date',
-      confirmText: 'OK',
-      cancelText: 'Cancel',
+      helpText: SeePlanStrings.get('selectstartdate', lang),
+      confirmText: SeePlanStrings.get('ok', lang),
+      cancelText: SeePlanStrings.get('cancel', lang),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: _primaryColor,
+              primary: primaryColor,
               onPrimary: Colors.white,
               surface: Colors.white,
-              onSurface: _textPrimary,
+              onSurface: textPrimary,
             ),
           ),
           child: child!,
         );
       },
     );
-
     if (picked != null) {
       setState(() {
-        _startDate = picked;
-        // Switch away from 'today' when using date range
-        if (_selectedFilter == 'today') {
-          _selectedFilter = 'all';
-        }
-        if (_endDate != null && _endDate!.isBefore(_startDate!)) {
-          _endDate = null;
-        }
+        startDate = picked;
+        if (selectedFilter == 'today') selectedFilter = 'all';
+        if (endDate != null && endDate!.isBefore(startDate!)) endDate = null;
       });
-      _loadPlans();
+      loadPlans();
     }
   }
 
-  Future<void> _selectEndDate() async {
+  Future<void> selectEndDate() async {
+    final lang = context.read<LanguageProvider>().language;
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _endDate ?? _startDate ?? DateTime.now(),
-      firstDate: _startDate ?? DateTime(2024),
+      initialDate: endDate ?? startDate ?? DateTime.now(),
+      firstDate: startDate ?? DateTime(2024),
       lastDate: DateTime(2030),
-      helpText: 'Select End Date',
-      confirmText: 'OK',
-      cancelText: 'Cancel',
+      helpText: SeePlanStrings.get('selectenddate', lang),
+      confirmText: SeePlanStrings.get('ok', lang),
+      cancelText: SeePlanStrings.get('cancel', lang),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: _primaryColor,
+              primary: primaryColor,
               onPrimary: Colors.white,
               surface: Colors.white,
-              onSurface: _textPrimary,
+              onSurface: textPrimary,
             ),
           ),
           child: child!,
         );
       },
     );
-
     if (picked != null) {
       setState(() {
-        _endDate = picked;
-        // Switch away from 'today' when using date range
-        if (_selectedFilter == 'today') {
-          _selectedFilter = 'all';
-        }
+        endDate = picked;
+        if (selectedFilter == 'today') selectedFilter = 'all';
       });
-      _loadPlans();
+      loadPlans();
     }
   }
 
-  void _clearDateFilter() {
+  void clearDateFilter() {
     setState(() {
-      _startDate = null;
-      _endDate = null;
+      startDate = null;
+      endDate = null;
     });
-    _loadPlans();
+    loadPlans();
   }
 
+  // ======================== HELPERS ========================
   String _getStatusDisplayText(String status, String statusDisplay) {
-    if (status == 'planned') {
-      return 'Upcoming Plan';
-    }
-    if (statusDisplay.isNotEmpty) {
-      return statusDisplay;
-    }
+    final lang = context.read<LanguageProvider>().language;
+    if (status == 'planned') return SeePlanStrings.get('upcomingplan', lang);
+    if (statusDisplay.isNotEmpty) return statusDisplay;
     return status.replaceAll('_', ' ');
   }
 
-  Color _getStatusColor(String status) {
+  Color getStatusColor(String status) {
     switch (status) {
       case 'completed':
-        return _successColor;
-      case 'in_progress':
-        return _warningColor;
+        return successColor;
+      case 'inprogress':
+        return warningColor;
       case 'planned':
-        return _accentColor;
+        return accentColor;
       default:
-        return _textSecondary;
+        return textSecondary;
     }
   }
 
-  Color _getStatusBgColor(String status) {
+  Color getStatusBgColor(String status) {
     switch (status) {
       case 'completed':
-        return _successColor.withOpacity(0.1);
-      case 'in_progress':
-        return _warningColor.withOpacity(0.1);
+        return successColor.withOpacity(0.1);
+      case 'inprogress':
+        return warningColor.withOpacity(0.1);
       case 'planned':
-        return _accentColor.withOpacity(0.1);
+        return accentColor.withOpacity(0.1);
       default:
-        return _dividerColor;
+        return dividerColor;
     }
   }
 
-  IconData _getStatusIcon(String status) {
+  IconData getStatusIcon(String status) {
     switch (status) {
       case 'completed':
         return Icons.check_circle_rounded;
-      case 'in_progress':
+      case 'inprogress':
         return Icons.timelapse_rounded;
       case 'planned':
         return Icons.event_note_rounded;
@@ -406,28 +338,29 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     }
   }
 
-  List<String> _getVillageNames(VillageVisitPlan plan) {
+  // ✅ FIXED — In _getVillageNames():
+  List<String> _getVillageNames(VillageVisitPlan plan, String lang) {
     final List<String> names = [];
     for (var dp in plan.dailyPlans) {
       for (var visit in dp.villageVisits) {
-        if (visit.village.isNotEmpty) {
-          names.add(visit.village);
-        }
+        names.add(visit.getDisplayVillage(lang));
       }
     }
     return names;
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  //  BUILD
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+
+
+  // ======================== BUILD ========================
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: _primaryColor,
+        backgroundColor: primaryColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
@@ -436,9 +369,9 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Village Visit Plans',
-              style: TextStyle(
+            Text(
+              SeePlanStrings.get('villagevisitplans', lang),
+              style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
@@ -446,7 +379,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
               ),
             ),
             Text(
-              '$_totalPlans Plans · $_totalVillages Villages',
+              '$totalPlans ${SeePlanStrings.get('plans', lang)} · $totalVillages ${SeePlanStrings.get('villages', lang)}',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white.withOpacity(0.9),
@@ -458,15 +391,15 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadPlans,
-          color: _primaryColor,
-          backgroundColor: _cardColor,
+          onRefresh: loadPlans,
+          color: primaryColor,
+          backgroundColor: cardColor,
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              SliverToBoxAdapter(child: _buildStatsSection()),
-              SliverToBoxAdapter(child: _buildFiltersSection()),
-              _buildContentSection(),
+              SliverToBoxAdapter(child: _buildStatsSection(lang)),
+              SliverToBoxAdapter(child: _buildFiltersSection(lang)),
+              _buildContentSection(lang),
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           ),
@@ -475,44 +408,44 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     );
   }
 
-  // ── STATS SECTION ─────────────────────────────────────────────
-  Widget _buildStatsSection() {
+  // ======================== STATS SECTION ========================
+  Widget _buildStatsSection(String lang) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionLabel('Overview'),
+          _buildSectionLabel(SeePlanStrings.get('overview', lang)),
           const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
                 child: _buildStatCard(
-                  _label('Completed'),
-                  _completedPlans.toString(),
+                  SeePlanStrings.get('completed', lang),
+                  completedPlans.toString(),
                   Icons.check_circle_outline_rounded,
-                  _successColor,
-                  _successColor.withOpacity(0.1),
+                  successColor,
+                  successColor.withOpacity(0.1),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _buildStatCard(
-                  _label('In Progress'),
-                  _inProgressPlans.toString(),
+                  SeePlanStrings.get('inprogress', lang),
+                  inProgressPlans.toString(),
                   Icons.timelapse_rounded,
-                  _warningColor,
-                  _warningColor.withOpacity(0.1),
+                  warningColor,
+                  warningColor.withOpacity(0.1),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _buildStatCard(
-                  _label('Upcoming'),
-                  _plannedPlans.toString(),
+                  SeePlanStrings.get('upcoming', lang),
+                  plannedPlans.toString(),
                   Icons.event_note_rounded,
-                  _accentColor,
-                  _accentColor.withOpacity(0.1),
+                  accentColor,
+                  accentColor.withOpacity(0.1),
                 ),
               ),
             ],
@@ -527,9 +460,9 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _borderColor),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -555,7 +488,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: _textPrimary,
+              color: textPrimary,
               letterSpacing: -0.5,
               height: 1,
             ),
@@ -565,7 +498,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             title,
             style: const TextStyle(
               fontSize: 11,
-              color: _textSecondary,
+              color: textSecondary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -574,74 +507,73 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     );
   }
 
-  // ── FILTERS SECTION ───────────────────────────────────────────
-  Widget _buildFiltersSection() {
+  // ======================== FILTERS SECTION ========================
+  Widget _buildFiltersSection(String lang) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionLabel('Filters'),
+          _buildSectionLabel(SeePlanStrings.get('filters', lang)),
           const SizedBox(height: 14),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                _buildFilterChip(_label('Today'), 'today', Icons.today_rounded),
-                const SizedBox(width: 8),
-                _buildFilterChip(_label('All'), 'all', Icons.grid_view_rounded),
+                _buildFilterChip(
+                    SeePlanStrings.get('today', lang), 'today', Icons.today_rounded),
                 const SizedBox(width: 8),
                 _buildFilterChip(
-                    _label('Upcoming'), 'planned', Icons.event_note_rounded),
+                    SeePlanStrings.get('all', lang), 'all', Icons.grid_view_rounded),
                 const SizedBox(width: 8),
-                // ── CHANGE 1: Swapped Completed and In Progress order ──
-                _buildFilterChip(
-                    _label('Completed'), 'completed', Icons.check_circle_rounded),
+                _buildFilterChip(SeePlanStrings.get('upcoming', lang), 'planned',
+                    Icons.event_note_rounded),
                 const SizedBox(width: 8),
-                _buildFilterChip(
-                    _label('In Progress'), 'in_progress', Icons.timelapse_rounded),
+                _buildFilterChip(SeePlanStrings.get('completed', lang),
+                    'completed', Icons.check_circle_rounded),
+                const SizedBox(width: 8),
+                _buildFilterChip(SeePlanStrings.get('inprogress', lang),
+                    'inprogress', Icons.timelapse_rounded),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          _buildSimpleDateFilter(),
+          _buildSimpleDateFilter(lang),
         ],
       ),
     );
   }
 
   Widget _buildFilterChip(String label, String value, IconData icon) {
-    final isSelected = _selectedFilter == value;
+    final isSelected = selectedFilter == value;
     Color chipColor;
-
     switch (value) {
       case 'today':
-        chipColor = _purpleColor;
+        chipColor = purpleColor;
         break;
       case 'completed':
-        chipColor = _successColor;
+        chipColor = successColor;
         break;
-      case 'in_progress':
-        chipColor = _warningColor;
+      case 'inprogress':
+        chipColor = warningColor;
         break;
       case 'planned':
-        chipColor = _accentColor;
+        chipColor = accentColor;
         break;
       default:
-        chipColor = _primaryColor;
+        chipColor = primaryColor;
     }
-
     return GestureDetector(
-      onTap: () => _onFilterChanged(value),
+      onTap: () => onFilterChanged(value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: isSelected ? chipColor : _cardColor,
+          color: isSelected ? chipColor : cardColor,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? chipColor : _borderColor,
+            color: isSelected ? chipColor : borderColor,
             width: 1.5,
           ),
           boxShadow: isSelected
@@ -657,16 +589,14 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.white : _textSecondary,
-            ),
+            Icon(icon,
+                size: 16,
+                color: isSelected ? Colors.white : textSecondary),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : _textPrimary,
+                color: isSelected ? Colors.white : textPrimary,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
               ),
@@ -677,45 +607,42 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     );
   }
 
-  Widget _buildSimpleDateFilter() {
-    final hasStart = _startDate != null;
-    final hasEnd = _endDate != null;
+  Widget _buildSimpleDateFilter(String lang) {
+    final hasStart = startDate != null;
+    final hasEnd = endDate != null;
     final dateFormat = DateFormat('dd MMM yy');
-
     return Row(
       children: [
-        // ── Start Date ──
+        // Start Date
         Expanded(
           child: GestureDetector(
-            onTap: _selectStartDate,
+            onTap: selectStartDate,
             child: Container(
               padding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               decoration: BoxDecoration(
-                color: _cardColor,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: hasStart ? _primaryColor : _borderColor,
+                  color: hasStart ? primaryColor : borderColor,
                   width: 1.5,
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    color: hasStart ? _primaryColor : _textSecondary,
-                    size: 16,
-                  ),
+                  Icon(Icons.calendar_today_rounded,
+                      color: hasStart ? primaryColor : textSecondary,
+                      size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'From',
+                          SeePlanStrings.get('from', lang),
                           style: TextStyle(
                             fontSize: 9,
-                            color: hasStart ? _primaryColor : _textSecondary,
+                            color: hasStart ? primaryColor : textSecondary,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
                           ),
@@ -723,11 +650,11 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                         const SizedBox(height: 1),
                         Text(
                           hasStart
-                              ? dateFormat.format(_startDate!)
-                              : 'Select date',
+                              ? dateFormat.format(startDate!)
+                              : SeePlanStrings.get('selectdate', lang),
                           style: TextStyle(
                             fontSize: 12,
-                            color: hasStart ? _textPrimary : _textSecondary,
+                            color: hasStart ? textPrimary : textSecondary,
                             fontWeight: FontWeight.w700,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -740,45 +667,40 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             ),
           ),
         ),
-
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 6),
           child: Icon(Icons.arrow_forward_rounded,
-              size: 14, color: _textSecondary.withOpacity(0.5)),
+              size: 14, color: textSecondary.withOpacity(0.5)),
         ),
-
-        // ── End Date ──
+        // End Date
         Expanded(
           child: GestureDetector(
-            onTap: _selectEndDate,
+            onTap: selectEndDate,
             child: Container(
               padding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               decoration: BoxDecoration(
-                color: _cardColor,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: hasEnd ? _primaryColor : _borderColor,
+                  color: hasEnd ? primaryColor : borderColor,
                   width: 1.5,
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.event_rounded,
-                    color: hasEnd ? _primaryColor : _textSecondary,
-                    size: 16,
-                  ),
+                  Icon(Icons.event_rounded,
+                      color: hasEnd ? primaryColor : textSecondary, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'To',
+                          SeePlanStrings.get('to', lang),
                           style: TextStyle(
                             fontSize: 9,
-                            color: hasEnd ? _primaryColor : _textSecondary,
+                            color: hasEnd ? primaryColor : textSecondary,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
                           ),
@@ -786,11 +708,11 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                         const SizedBox(height: 1),
                         Text(
                           hasEnd
-                              ? dateFormat.format(_endDate!)
-                              : 'Select date',
+                              ? dateFormat.format(endDate!)
+                              : SeePlanStrings.get('selectdate', lang),
                           style: TextStyle(
                             fontSize: 12,
-                            color: hasEnd ? _textPrimary : _textSecondary,
+                            color: hasEnd ? textPrimary : textSecondary,
                             fontWeight: FontWeight.w700,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -803,20 +725,20 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             ),
           ),
         ),
-
-        // ── Clear button ──
+        // Clear button
         if (hasStart || hasEnd) ...[
           const SizedBox(width: 8),
           GestureDetector(
-            onTap: _clearDateFilter,
+            onTap: clearDateFilter,
             child: Container(
               padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
-                color: _errorColor.withOpacity(0.1),
+                color: errorColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _errorColor.withOpacity(0.3)),
+                border: Border.all(color: errorColor.withOpacity(0.3)),
               ),
-              child: Icon(Icons.close_rounded, size: 16, color: _errorColor),
+              child: const Icon(Icons.close_rounded,
+                  size: 16, color: errorColor),
             ),
           ),
         ],
@@ -824,34 +746,29 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     );
   }
 
-  // ── CONTENT SECTION ───────────────────────────────────────────
-  Widget _buildContentSection() {
-    if (_isLoading) {
+  // ======================== CONTENT SECTION ========================
+  Widget _buildContentSection(String lang) {
+    if (isLoading) {
       return const SliverFillRemaining(
         hasScrollBody: false,
         child: Center(
           child: CircularProgressIndicator(
-            color: _primaryColor,
-            strokeWidth: 2.5,
-          ),
+              color: primaryColor, strokeWidth: 2.5),
         ),
       );
     }
-
-    if (_errorMessage.isNotEmpty) {
+    if (errorMessage.isNotEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
-        child: _buildErrorWidget(),
+        child: _buildErrorWidget(lang),
       );
     }
-
-    if (_plans.isEmpty) {
+    if (plans.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
-        child: _buildEmptyWidget(),
+        child: _buildEmptyWidget(lang),
       );
     }
-
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       sliver: SliverList(
@@ -859,7 +776,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
               (context, index) {
             return TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 300 + (index * 80)),
+              duration: Duration(milliseconds: 300 + index * 80),
               curve: Curves.easeOutCubic,
               builder: (context, value, child) {
                 return Opacity(
@@ -870,20 +787,21 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                   ),
                 );
               },
-              child: _buildPlanCard(_plans[index]),
+              child: _buildPlanCard(plans[index], lang),
             );
           },
-          childCount: _plans.length,
+          childCount: plans.length,
         ),
       ),
     );
   }
 
-  // ── PLAN CARD ─────────────────────────────────────────────────
-  Widget _buildPlanCard(VillageVisitPlan plan) {
-    final statusColor = _getStatusColor(plan.status);
-    final statusBgColor = _getStatusBgColor(plan.status);
-    final statusIcon = _getStatusIcon(plan.status);
+  // ======================== PLAN CARD ========================
+  Widget _buildPlanCard(VillageVisitPlan plan, String lang) {
+    final statusColor = getStatusColor(plan.status);
+    final statusBgColor = getStatusBgColor(plan.status);
+    final statusIcon = getStatusIcon(plan.status);
+    final bool isMarathi = lang == 'mr';
 
     int totalVillages = 0;
     int completedVillages = 0;
@@ -895,16 +813,23 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     double progress =
     totalVillages > 0 ? completedVillages / totalVillages : 0;
 
-    final villageNames = _getVillageNames(plan);
-    final villageDisplayText =
-    villageNames.isNotEmpty ? villageNames.join(', ') : 'No villages';
+    final villageNames = _getVillageNames(plan, lang);
+    final villageDisplayText = villageNames.isNotEmpty
+        ? villageNames.join(', ')
+        : SeePlanStrings.get('novillages', lang);
+
+    // Dynamic: show Marathi plan name if available
+    // ✅ FIXED — In _buildPlanCard():
+    final planDisplayName = plan.getDisplayName(lang);
+// Was: plan.planName / plan.marathiPlanName (showed BOTH)
+
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _borderColor),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -930,7 +855,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Top Row: Icon + Name + Status + Arrow ──
+                // Top Row
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -948,11 +873,11 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            plan.displayName,
+                            planDisplayName,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
-                              color: _textPrimary,
+                              color: textPrimary,
                               letterSpacing: -0.3,
                             ),
                             maxLines: 1,
@@ -981,31 +906,24 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: _textSecondary.withOpacity(0.5),
-                      size: 20,
-                    ),
+                    Icon(Icons.chevron_right_rounded,
+                        color: textSecondary.withOpacity(0.5), size: 20),
                   ],
                 ),
-
                 const SizedBox(height: 14),
-
-                // ── Info Row ──
+                // Info Row
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _backgroundColor,
+                    color: backgroundColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
                     children: [
                       Row(
                         children: [
-                          _buildInfoItem(
-                            Icons.calendar_today_rounded,
-                            '${plan.startDate} – ${plan.endDate}',
-                          ),
+                          _buildInfoItem(Icons.calendar_today_rounded,
+                              '${plan.startDate} → ${plan.endDate}'),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -1013,14 +931,14 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Icon(Icons.location_on_outlined,
-                              size: 14, color: _textSecondary),
+                              size: 14, color: textSecondary),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               '$villageDisplayText ($totalVillages)',
                               style: const TextStyle(
                                 fontSize: 11,
-                                color: _textPrimary,
+                                color: textPrimary,
                                 fontWeight: FontWeight.w700,
                               ),
                               maxLines: 2,
@@ -1028,27 +946,23 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                             ),
                           ),
                           const SizedBox(width: 10),
-                          _buildInfoItem(
-                            Icons.view_day_outlined,
-                            '${plan.dailyPlans.length} Days',
-                          ),
+                          _buildInfoItem(Icons.view_day_outlined,
+                              '${plan.dailyPlans.length} ${SeePlanStrings.get('days', lang)}'),
                         ],
                       ),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 14),
-
-                // ── Progress Bar ──
+                // Progress Bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '$completedVillages of $totalVillages villages',
+                      '$completedVillages ${SeePlanStrings.get('of', lang)} $totalVillages ${SeePlanStrings.get('villages', lang).toLowerCase()}',
                       style: const TextStyle(
                         fontSize: 11,
-                        color: _textSecondary,
+                        color: textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1070,7 +984,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
                       Container(
                         height: 6,
                         decoration: BoxDecoration(
-                          color: _dividerColor,
+                          color: dividerColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -1099,14 +1013,14 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: _textSecondary),
+        Icon(icon, size: 14, color: textSecondary),
         const SizedBox(width: 6),
         Flexible(
           child: Text(
             label,
             style: const TextStyle(
               fontSize: 11,
-              color: _textPrimary,
+              color: textPrimary,
               fontWeight: FontWeight.w700,
             ),
             overflow: TextOverflow.ellipsis,
@@ -1116,7 +1030,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     );
   }
 
-  // ── SECTION LABEL HELPER ──────────────────────────────────────
+  // ======================== SECTION LABEL ========================
   Widget _buildSectionLabel(String label) {
     return Row(
       children: [
@@ -1124,7 +1038,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
           width: 3,
           height: 16,
           decoration: BoxDecoration(
-            color: _primaryColor,
+            color: primaryColor,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -1134,7 +1048,7 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w900,
-            color: _textPrimary,
+            color: textPrimary,
             letterSpacing: -0.3,
           ),
         ),
@@ -1142,8 +1056,8 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     );
   }
 
-  // ── ERROR WIDGET ──────────────────────────────────────────────
-  Widget _buildErrorWidget() {
+  // ======================== ERROR WIDGET ========================
+  Widget _buildErrorWidget(String lang) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48),
@@ -1153,52 +1067,49 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: _errorColor.withOpacity(0.1),
+                color: errorColor.withOpacity(0.1),
                 shape: BoxShape.circle,
-                border: Border.all(color: _errorColor.withOpacity(0.3)),
+                border: Border.all(color: errorColor.withOpacity(0.3)),
               ),
-              child: Icon(
-                Icons.wifi_off_rounded,
-                size: 36,
-                color: _errorColor,
-              ),
+              child: const Icon(Icons.wifi_off_rounded,
+                  size: 36, color: errorColor),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Something went wrong',
-              style: TextStyle(
+            Text(
+              SeePlanStrings.get('somethingwentwrong', lang),
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
-                color: _textPrimary,
+                color: textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              _errorMessage,
+              errorMessage,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
-                color: _textSecondary,
+                color: textSecondary,
                 fontWeight: FontWeight.w500,
                 height: 1.5,
               ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _loadPlans,
+              onPressed: loadPlans,
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text(
-                'Try Again',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              label: Text(
+                SeePlanStrings.get('tryagain', lang),
+                style:
+                const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
+                backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
                 padding:
                 const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                    borderRadius: BorderRadius.circular(10)),
                 elevation: 0,
               ),
             ),
@@ -1208,8 +1119,8 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
     );
   }
 
-  // ── EMPTY WIDGET ──────────────────────────────────────────────
-  Widget _buildEmptyWidget() {
+  // ======================== EMPTY WIDGET ========================
+  Widget _buildEmptyWidget(String lang) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48),
@@ -1219,32 +1130,29 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: _dividerColor,
+                color: dividerColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: _borderColor),
+                border: Border.all(color: borderColor),
               ),
-              child: Icon(
-                Icons.inbox_rounded,
-                size: 36,
-                color: Colors.grey.shade400,
-              ),
+              child: Icon(Icons.inbox_rounded,
+                  size: 36, color: Colors.grey.shade400),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'No Plans Found',
-              style: TextStyle(
+            Text(
+              SeePlanStrings.get('noplansfound', lang),
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
-                color: _textPrimary,
+                color: textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Try adjusting your filters or\ncheck back later',
+            Text(
+              SeePlanStrings.get('tryadjustingfilters', lang),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
-                color: _textSecondary,
+                color: textSecondary,
                 fontWeight: FontWeight.w500,
                 height: 1.5,
               ),
@@ -1253,25 +1161,25 @@ class _VillagePlansDashboardState extends State<VillagePlansDashboard>
             OutlinedButton.icon(
               onPressed: () {
                 setState(() {
-                  _selectedFilter = 'today';
-                  _startDate = null;
-                  _endDate = null;
+                  selectedFilter = 'today';
+                  startDate = null;
+                  endDate = null;
                 });
-                _loadPlans();
+                loadPlans();
               },
               icon: const Icon(Icons.filter_alt_off_rounded, size: 16),
-              label: const Text(
-                'Clear Filters',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              label: Text(
+                SeePlanStrings.get('clearfilters', lang),
+                style:
+                const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: _primaryColor,
+                foregroundColor: primaryColor,
                 padding:
                 const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                side: const BorderSide(color: _primaryColor, width: 1.5),
+                    borderRadius: BorderRadius.circular(10)),
+                side: const BorderSide(color: primaryColor, width: 1.5),
               ),
             ),
           ],

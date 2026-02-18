@@ -1,8 +1,13 @@
 import 'dart:io';
+import 'package:devlipi/devlipi.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
+import 'package:translator/translator.dart';
+import '../language_jsons/mukadam_update_strings.dart';
+import '../provider/language_provider.dart';
 import 'mukadam_dashboard/mukadam_service.dart';
 
 class MukkadamUpdateScreen extends StatefulWidget {
@@ -18,6 +23,7 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
   final MukkadamService _service = MukkadamService();
   final ImagePicker _picker = ImagePicker();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GoogleTranslator _translator = GoogleTranslator();
 
   final TextEditingController _panController = TextEditingController();
   final TextEditingController _aadharController = TextEditingController();
@@ -30,6 +36,9 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
   String? _localPanPath;
   String? _localAadharPath;
   String? _localProfilePath;
+
+  // ✅ Marathi name for language-aware display
+  String? _marathiName;
 
   // ── Professional Color Palette (matching VillagePlansDashboard) ──
   static const Color _primaryColor = Color(0xFF1E3A5F);
@@ -59,59 +68,65 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //  TRANSLATION HELPER
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Future<String> _toMarathi(String text) async {
+    if (text.trim().isEmpty) return text;
+    try {
+      final result = await _translator.translate(text, from: 'en', to: 'mr');
+      if (result.text.toLowerCase() != text.toLowerCase()) {
+        return result.text;
+      }
+    } catch (_) {}
+    return Devlipi.transliterate(text);
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  VALIDATION METHODS (all optional — only validate if non-empty)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  /// PAN: 10 characters — 5 uppercase letters + 4 digits + 1 uppercase letter
-  /// Example: ABCDE1234F
-  /// OPTIONAL: returns null if empty
-  String? _validatePAN(String? value) {
+  String? _validatePAN(String? value, String lang) {
     if (value == null || value.trim().isEmpty) {
-      return null; // Optional — skip validation if empty
+      return null;
     }
     final pan = value.trim().toUpperCase();
     final panRegex = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$');
     if (pan.length != 10) {
-      return 'PAN must be exactly 10 characters\nपॅन अचूक 10 अक्षरांचा असावा';
+      return MukadamUpdateStrings.get('pan_length_error', lang);
     }
     if (!panRegex.hasMatch(pan)) {
-      return 'Invalid PAN format (e.g. ABCDE1234F)\nअवैध पॅन स्वरूप (उदा. ABCDE1234F)';
+      return MukadamUpdateStrings.get('pan_format_error', lang);
     }
     return null;
   }
 
-  /// Aadhaar: 12 digits, must not start with 0 or 1
-  /// Example: 234567890123
-  /// OPTIONAL: returns null if empty
-  String? _validateAadhar(String? value) {
+  String? _validateAadhar(String? value, String lang) {
     if (value == null || value.trim().isEmpty) {
-      return null; // Optional — skip validation if empty
+      return null;
     }
     final aadhar = value.trim().replaceAll(' ', '');
     if (aadhar.length != 12) {
-      return 'Aadhaar must be exactly 12 digits\nआधार अचूक 12 अंकांचा असावा';
+      return MukadamUpdateStrings.get('aadhar_length_error', lang);
     }
     final aadharRegex = RegExp(r'^[2-9]{1}[0-9]{11}$');
     if (!aadharRegex.hasMatch(aadhar)) {
-      return 'Invalid Aadhaar (12 digits, cannot start with 0 or 1)\nअवैध आधार (12 अंक, 0 किंवा 1 ने सुरू होऊ शकत नाही)';
+      return MukadamUpdateStrings.get('aadhar_format_error', lang);
     }
     return null;
   }
 
-  /// Voter ID (EPIC): 10 characters — 3 uppercase letters + 7 digits
-  /// Example: ABC1234567
-  /// OPTIONAL: returns null if empty
-  String? _validateVoterID(String? value) {
+  String? _validateVoterID(String? value, String lang) {
     if (value == null || value.trim().isEmpty) {
-      return null; // Optional — skip validation if empty
+      return null;
     }
     final voter = value.trim().toUpperCase();
     if (voter.length != 10) {
-      return 'Voter ID must be exactly 10 characters\nमतदार ओळखपत्र अचूक 10 अक्षरांचे असावे';
+      return MukadamUpdateStrings.get('voter_length_error', lang);
     }
     final voterRegex = RegExp(r'^[A-Z]{3}[0-9]{7}$');
     if (!voterRegex.hasMatch(voter)) {
-      return 'Invalid Voter ID format (e.g. ABC1234567)\nअवैध मतदार ओळखपत्र स्वरूप (उदा. ABC1234567)';
+      return MukadamUpdateStrings.get('voter_format_error', lang);
     }
     return null;
   }
@@ -123,8 +138,17 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
   void _loadDetails() async {
     try {
       final data = await _service.fetchMukkadamDetails(widget.mukkadamId);
+
+      // ✅ Translate name for Marathi display
+      final String englishName = data['mukkadam_name'] ?? data['name'] ?? '';
+      String? translatedName;
+      if (englishName.trim().isNotEmpty) {
+        translatedName = await _toMarathi(englishName);
+      }
+
       setState(() {
         _data = data;
+        _marathiName = translatedName;
         _panController.text = data['pan_number'] ?? '';
         _aadharController.text = data['aadhar_number'] ?? '';
         _voterController.text = data['voter_id_number'] ?? '';
@@ -134,8 +158,9 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
         _localProfilePath = null;
       });
     } catch (e) {
+      final lang = context.read<LanguageProvider>().language;
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error / त्रुटी: $e")));
+          SnackBar(content: Text("${MukadamUpdateStrings.get('error', lang)}: $e")));
       setState(() => _isLoading = false);
     }
   }
@@ -145,6 +170,8 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   void _showPickerOptions(String type) {
+    final lang = context.read<LanguageProvider>().language;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -154,10 +181,10 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
         return SafeArea(
           child: Wrap(
             children: [
-              const ListTile(
+              ListTile(
                 title: Text(
-                  'Select Image Source / प्रतिमा स्रोत निवडा',
-                  style: TextStyle(
+                  MukadamUpdateStrings.get('select_image_source', lang),
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     color: _textPrimary,
                   ),
@@ -165,8 +192,8 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library, color: _primaryColor),
-                title: const Text('Gallery / गॅलरी',
-                    style: TextStyle(
+                title: Text(MukadamUpdateStrings.get('gallery', lang),
+                    style: const TextStyle(
                         fontWeight: FontWeight.w700, color: _textPrimary)),
                 onTap: () {
                   Navigator.pop(context);
@@ -175,8 +202,8 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: _primaryColor),
-                title: const Text('Camera / कॅमेरा',
-                    style: TextStyle(
+                title: Text(MukadamUpdateStrings.get('camera', lang),
+                    style: const TextStyle(
                         fontWeight: FontWeight.w700, color: _textPrimary)),
                 onTap: () {
                   Navigator.pop(context);
@@ -219,12 +246,12 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   void _handleUpdate() async {
-    // Validate form first
+    final lang = context.read<LanguageProvider>().language;
+
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              "Please fix the errors before submitting\nकृपया सबमिट करण्यापूर्वी त्रुटी दुरुस्त करा"),
+        SnackBar(
+          content: Text(MukadamUpdateStrings.get('fix_errors', lang)),
           backgroundColor: _errorColor,
         ),
       );
@@ -289,24 +316,23 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content:
-            Text("Updated Successfully / यशस्वीरित्या अपडेट केले"),
+          SnackBar(
+            content: Text(MukadamUpdateStrings.get('updated_successfully', lang)),
             backgroundColor: _successColor,
           ),
         );
         _loadDetails();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  "Failed to update details / तपशील अपडेट करण्यात अयशस्वी")),
+          SnackBar(
+              content: Text(MukadamUpdateStrings.get('failed_to_update', lang))),
         );
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Error / त्रुटी: $e")));
+      final lang = context.read<LanguageProvider>().language;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${MukadamUpdateStrings.get('error', lang)}: $e")));
       setState(() => _isLoading = false);
     }
   }
@@ -318,6 +344,7 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
   Widget _buildVerificationSection({
     required String label,
     required String marathiLabel,
+    required String lang,
     required bool isVerified,
     required TextEditingController controller,
     required String? networkImageUrl,
@@ -332,6 +359,9 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
     bool showTextField = true,
     bool showImagePicker = true,
   }) {
+    // ✅ Resolve display label based on selected language
+    final String displayLabel = lang == 'mr' ? marathiLabel : label;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -358,7 +388,7 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "$label / $marathiLabel",
+                      displayLabel,
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
@@ -379,14 +409,14 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
                     border:
                     Border.all(color: _successColor.withOpacity(0.3)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.verified_rounded,
+                      const Icon(Icons.verified_rounded,
                           color: _successColor, size: 14),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        "Verified / सत्यापित",
-                        style: TextStyle(
+                        MukadamUpdateStrings.get('verified', lang),
+                        style: const TextStyle(
                           color: _successColor,
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -415,14 +445,15 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
                 color: _textPrimary,
               ),
               decoration: InputDecoration(
-                labelText: "$label Number / $marathiLabel क्रमांक",
+                labelText:
+                "$displayLabel ${MukadamUpdateStrings.get('number', lang)}",
                 labelStyle: const TextStyle(
                   color: _textSecondary,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
                 hintText:
-                "Enter $label Number / $marathiLabel क्रमांक प्रविष्ट करा",
+                "${MukadamUpdateStrings.get('enter', lang)} $displayLabel ${MukadamUpdateStrings.get('number', lang)}",
                 hintStyle: TextStyle(
                   color: _textSecondary.withOpacity(0.6),
                   fontWeight: FontWeight.w500,
@@ -495,10 +526,11 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
                         height: 180,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                        errorBuilder: (_, __, ___) =>
+                            _buildPlaceholder(lang),
                       )
                     else
-                      _buildPlaceholder(),
+                      _buildPlaceholder(lang),
                     if (!isVerified)
                       Positioned(
                         bottom: 8,
@@ -535,7 +567,7 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(String lang) {
     return Container(
       height: 120,
       width: double.infinity,
@@ -550,9 +582,9 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
           Icon(Icons.cloud_upload_outlined,
               size: 32, color: _accentColor.withOpacity(0.7)),
           const SizedBox(height: 8),
-          const Text(
-            "Upload Document / कागदपत्र अपलोड करा",
-            style: TextStyle(
+          Text(
+            MukadamUpdateStrings.get('upload_document', lang),
+            style: const TextStyle(
               color: _accentColor,
               fontWeight: FontWeight.w700,
               fontSize: 13,
@@ -569,6 +601,8 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+
     // ── Loading State ──
     if (_isLoading) {
       return const Scaffold(
@@ -588,6 +622,14 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
     bool isAadharVerified = _data?['is_aadhaar_verified'] ?? false;
     bool isVoterVerified = _data?['is_voter_id_verified'] ?? false;
 
+    // ✅ Language-aware name display
+    final String englishName = _data?['mukkadam_name'] ?? '';
+    final String displayName = (lang == 'mr' &&
+        _marathiName != null &&
+        _marathiName!.isNotEmpty)
+        ? _marathiName!
+        : englishName;
+
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
@@ -602,7 +644,9 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _data?['mukkadam_name'] ?? "Update Details / तपशील अपडेट करा",
+              displayName.isNotEmpty
+                  ? displayName
+                  : MukadamUpdateStrings.get('update_details', lang),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
@@ -611,7 +655,7 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
               ),
             ),
             Text(
-              'Verification Details / पडताळणी तपशील',
+              MukadamUpdateStrings.get('verification_details', lang),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white.withOpacity(0.9),
@@ -630,7 +674,8 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
               // ── Profile Photo (no text field, no validation) ──
               _buildVerificationSection(
                 label: "Profile Photo",
-                marathiLabel: "प्रोफाइल फोटो",
+                marathiLabel: MukadamUpdateStrings.get('profile_photo', 'mr'),
+                lang: lang,
                 type: "PROFILE",
                 isVerified: isFaceVerified,
                 controller: _dummyController,
@@ -642,13 +687,14 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
               // ── PAN Card: 10 chars — ABCDE1234F ──
               _buildVerificationSection(
                 label: "PAN Card",
-                marathiLabel: "पॅन कार्ड",
+                marathiLabel: MukadamUpdateStrings.get('pan_card', 'mr'),
+                lang: lang,
                 type: "PAN",
                 isVerified: isPanVerified,
                 controller: _panController,
                 networkImageUrl: _data?['pan_card_url'],
                 localPath: _localPanPath,
-                validator: _validatePAN,
+                validator: (v) => _validatePAN(v, lang),
                 maxLength: 10,
                 textCapitalization: TextCapitalization.characters,
                 keyboardType: TextInputType.text,
@@ -656,40 +702,40 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
                   FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
                   UpperCaseTextFormatter(),
                 ],
-                helperText:
-                'Format / स्वरूप: ABCDE1234F (5 letters/अक्षरे + 4 digits/अंक + 1 letter/अक्षर)',
+                helperText: MukadamUpdateStrings.get('pan_helper', lang),
               ),
 
               // ── Aadhar Card: 12 digits, cannot start with 0 or 1 ──
               _buildVerificationSection(
                 label: "Aadhar Card",
-                marathiLabel: "आधार कार्ड",
+                marathiLabel: MukadamUpdateStrings.get('aadhar_card', 'mr'),
+                lang: lang,
                 type: "AADHAR",
                 isVerified: isAadharVerified,
                 controller: _aadharController,
                 networkImageUrl: _data?['aadhar_card_url'],
                 localPath: _localAadharPath,
-                validator: _validateAadhar,
+                validator: (v) => _validateAadhar(v, lang),
                 maxLength: 12,
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                 ],
-                helperText:
-                '12-digit number (cannot start with 0 or 1) / 12-अंकी क्रमांक (0 किंवा 1 ने सुरू होऊ शकत नाही)',
+                helperText: MukadamUpdateStrings.get('aadhar_helper', lang),
               ),
 
               // ── Voter ID: 10 chars — ABC1234567 ──
               _buildVerificationSection(
                 label: "Voter ID",
-                marathiLabel: "मतदार ओळखपत्र",
+                marathiLabel: MukadamUpdateStrings.get('voter_id', 'mr'),
+                lang: lang,
                 type: "VOTER",
                 isVerified: isVoterVerified,
                 controller: _voterController,
                 networkImageUrl: null,
                 localPath: null,
                 showImagePicker: false,
-                validator: _validateVoterID,
+                validator: (v) => _validateVoterID(v, lang),
                 maxLength: 10,
                 textCapitalization: TextCapitalization.characters,
                 keyboardType: TextInputType.text,
@@ -697,17 +743,16 @@ class _MukkadamUpdateScreenState extends State<MukkadamUpdateScreen> {
                   FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
                   UpperCaseTextFormatter(),
                 ],
-                helperText:
-                'Format / स्वरूप: ABC1234567 (3 letters/अक्षरे + 7 digits/अंक)',
+                helperText: MukadamUpdateStrings.get('voter_helper', lang),
               ),
 
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: _handleUpdate,
                 icon: const Icon(Icons.save_rounded, size: 18),
-                label: const Text(
-                  "Save & Update Details / जतन करा आणि अपडेट करा",
-                  style: TextStyle(
+                label: Text(
+                  MukadamUpdateStrings.get('save_update', lang),
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),

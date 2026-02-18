@@ -63,8 +63,6 @@ class MukkadamService {
     }
   }
 
-  /// Fetch mukkadams with pending/not_started verifications
-  /// Used by: MukkadamListScreen (Verification Queue)
   Future<List<MukkadamDataModel>> fetchMukkadams(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final String? sessionToken = prefs.getString('session_token');
@@ -90,21 +88,53 @@ class MukkadamService {
           .map((json) => MukkadamDataModel.fromJson(json))
           .toList();
 
+      // ✅ Batch translate: name | village | taluka | district | state
       for (var m in mukkadams) {
-        if (m.mukkadamName.isNotEmpty) {
-          m.marathiName = await _toMarathi(m.mukkadamName);
+        final parts = [
+          m.mukkadamName,
+          m.village,
+          m.taluka,
+          m.district,
+          m.state,
+        ];
+
+        // Only translate non-empty fields
+        final nonEmptyParts = <int, String>{};
+        for (int i = 0; i < parts.length; i++) {
+          if (parts[i].trim().isNotEmpty) {
+            nonEmptyParts[i] = parts[i];
+          }
+        }
+
+        if (nonEmptyParts.isEmpty) continue;
+
+        // Combine with pipe separator for single API call
+        final combined = nonEmptyParts.values.join(' | ');
+        final translated = await _toMarathi(combined);
+        final translatedParts = translated.split(' | ');
+
+        // Map back to fields
+        final keys = nonEmptyParts.keys.toList();
+        for (int j = 0; j < keys.length && j < translatedParts.length; j++) {
+          final value = translatedParts[j].trim();
+          switch (keys[j]) {
+            case 0: m.marathiName = value; break;
+            case 1: m.marathiVillage = value; break;
+            case 2: m.marathiTaluka = value; break;
+            case 3: m.marathiDistrict = value; break;
+            case 4: m.marathiState = value; break;
+          }
         }
       }
 
       return mukkadams;
-
-
-
-
     } else {
       throw Exception('Failed to load mukkadams');
     }
   }
+
+
+
 
   /// Fetch mukkadams with completed verifications
   /// Used by: DirectoryScreen (Referrals - Registrations tab)

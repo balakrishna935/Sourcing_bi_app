@@ -53,15 +53,44 @@ class EntityDetails {
   final bool isDlVerified;
   final bool isVoterIdVerified;
 
-  // ✅ NEW: Marathi translated name (set after fetch)
   String? marathiName;
+  String? marathiBaseLocation;
+  String? marathiVehicleType;
 
-  // ✅ NEW: Bilingual display — "English / मराठी"
-  String get displayName {
+  // ✅ Bilingual display — "English / मराठी"
+  String get displayNamees {
     if (marathiName != null && marathiName!.isNotEmpty) {
       return '$name / $marathiName';
     }
     return name;
+  }
+
+  // ✅ Shows ONLY the selected language
+  String getDisplayName(String lang) {
+    if (lang == 'mr' && marathiName != null && marathiName!.isNotEmpty) {
+      return marathiName!;
+    }
+    return name;
+  }
+
+  // ✅ Language-aware location
+  String getDisplayLocation(String lang) {
+    if (lang == 'mr' &&
+        marathiBaseLocation != null &&
+        marathiBaseLocation!.isNotEmpty) {
+      return marathiBaseLocation!;
+    }
+    return baseLocation;
+  }
+
+  // ✅ Language-aware vehicle type
+  String getDisplayVehicleType(String lang, String fallback) {
+    if (lang == 'mr' &&
+        marathiVehicleType != null &&
+        marathiVehicleType!.isNotEmpty) {
+      return marathiVehicleType!;
+    }
+    return vehicleType ?? fallback;
   }
 
   EntityDetails({
@@ -77,6 +106,8 @@ class EntityDetails {
     required this.isDlVerified,
     required this.isVoterIdVerified,
     this.marathiName,
+    this.marathiBaseLocation,
+    this.marathiVehicleType,
   });
 
   factory EntityDetails.fromJson(Map<String, dynamic> json) {

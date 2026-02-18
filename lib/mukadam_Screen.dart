@@ -5,6 +5,7 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:intl/intl.dart';
 import 'package:mukadam_bi/call_stack.dart';
+import 'package:mukadam_bi/provider/language_provider.dart';
 import 'package:mukadam_bi/referral/user_referral_mukadam_screen.dart';
 import 'package:mukadam_bi/seeplan/plan_list_screen.dart';
 import 'package:mukadam_bi/seeplan/villages_list_screen.dart';
@@ -24,10 +25,10 @@ import 'fetch call logs/call_log_service.dart';
 import 'firebase_message.dart';
 import 'getTransport/gettransportscreen.dart';
 
+import 'language_jsons/app_strings.dart';
 import 'mukadan/authentication/screens/sendOtpScreen.dart';
 import 'mukadan/authentication/userProvider.dart';
 import 'mukadan/quick_registration/quick_registration_Screen.dart';
-import 'mukadan/registration/mukadam_registration_Screen.dart';
 
 import 'notes/visitApiService.dart';
 
@@ -42,7 +43,6 @@ class MukadamDashboard extends StatefulWidget {
 
 class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBindingObserver {
   int _selectedIndex = 0;
-  late final List<Widget> _pages;
   bool _isCalling = false;
 
   // Professional Color Palette
@@ -61,10 +61,6 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _pages = [
-      _buildDashboardContent(),
-      const DialPadScreen(),
-    ];
     _setupFCM();
     _syncAllData();
     _initializeAnalytics();
@@ -94,7 +90,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
   Future<void> _initiateCall() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final String userMobile = userProvider.user?.mobileNumber ?? "";
-    final String userId=userProvider.user?.id.toString() ?? 'unknown';
+    final String userId = userProvider.user?.id.toString() ?? 'unknown';
 
     await AnalyticsDebugService.logDebugEvent('central_team_number ${userId}', params: {
       'user_id': userProvider.user?.id ?? 'unknown',
@@ -143,7 +139,6 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
     }
   }
 
-
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -167,10 +162,6 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
     }
   }
 
-  // At the top of mukadam_Screen.dart — add this import
-   // ✅ Import your SmsService file
-
-// Then update _syncAllData() — replace the SMS section:
   Future<void> _syncAllData() async {
     Map<Permission, PermissionStatus> statuses = await [
       Permission.phone,
@@ -214,7 +205,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
       }
     }
 
-    // --- SMS --- ✅ UPDATED: now calls SmsService to sync
+    // --- SMS ---
     if (statuses[Permission.sms]!.isGranted) {
       print('--- FETCHING & SYNCING SMS MESSAGES ---');
       SmsQuery query = SmsQuery();
@@ -228,7 +219,6 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
           body.length > 20 ? "${body.substring(0, 20)}..." : body;
           print('SMS from ${msg.address}: $preview');
         }
-        // ✅ Actually sync SMS to your backend
         await SmsService().syncSms(context);
         print('SMS synced to server successfully.');
       }
@@ -238,7 +228,6 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
 
     print("--- ALL DATA SYNC PROCESSES COMPLETED ---");
   }
-
 
   Future<void> _checkAndFetchCallLogs() async {
     PermissionStatus status = await Permission.phone.request();
@@ -264,6 +253,8 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
   }
 
   Future<void> _handleLogout() async {
+    final lang = context.read<LanguageProvider>().language;
+
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -281,19 +272,19 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
               child: Icon(Icons.logout_rounded, color: _errorColor, size: 32),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Logout',
-              style: TextStyle(
+            Text(
+              AppStrings.get('logout', lang),
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: _textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Are you sure you want to logout?',
+            Text(
+              AppStrings.get('are_you_sure_logout', lang),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: _textSecondary),
+              style: const TextStyle(fontSize: 14, color: _textSecondary),
             ),
             const SizedBox(height: 24),
             Row(
@@ -309,7 +300,8 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
                       ),
                       side: BorderSide(color: Colors.grey.shade300),
                     ),
-                    child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
+                    child: Text(AppStrings.get('cancel', lang),
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -325,7 +317,8 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
                       ),
                       elevation: 0,
                     ),
-                    child: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w600)),
+                    child: Text(AppStrings.get('logout', lang),
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -338,7 +331,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
     if (confirm == true) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      final String userId=userProvider.user?.id.toString() ?? 'unknown';
+      final String userId = userProvider.user?.id.toString() ?? 'unknown';
 
       await AnalyticsDebugService.logDebugEvent('user_logout ${userId}', params: {
         'user_id': userProvider.user?.id ?? 'unknown',
@@ -362,7 +355,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
   void _onItemTapped(int index) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     String tabName = index == 0 ? "Home" : "Create Plan";
-    final String userId=userProvider.user?.id.toString() ?? 'unknown';
+    final String userId = userProvider.user?.id.toString() ?? 'unknown';
 
     AnalyticsDebugService.logDebugEvent('Dial_Pad ${userId}', params: {
       'user_id': userProvider.user?.id ?? 'unknown',
@@ -384,29 +377,22 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
         toolbarHeight: 80,
         backgroundColor: _primaryColor,
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Mukadam Management",
-              style: TextStyle(
+              AppStrings.get('mukadam_management', lang),
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              "मुकादम व्यवस्थापन",
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
               ),
             ),
           ],
@@ -414,28 +400,56 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
         centerTitle: false,
         elevation: 0,
         actions: [
+          // 🌐 Language Switcher
+          Consumer<LanguageProvider>(
+            builder: (context, langProvider, _) {
+              return PopupMenuButton<String>(
+                icon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.language, color: Colors.white, size: 20),
+                    const SizedBox(width: 4),
+                    Text(
+                      langProvider.isMarathi ? 'मर' : 'EN',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                onSelected: (String selectedLang) {
+                  langProvider.setLanguage(selectedLang);
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'en', child: Text('English')),
+                  PopupMenuItem(value: 'mr', child: Text('मराठी')),
+                ],
+              );
+            },
+          ),
+          // Existing logout button
           IconButton(
             onPressed: _handleLogout,
-            icon: const Icon(
-              Icons.logout_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
+            icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
             tooltip: 'Logout',
           ),
         ],
       ),
-
-      body: _selectedIndex < _pages.length
-          ? _pages[_selectedIndex]
+      body: _selectedIndex == 0
+          ? _buildDashboardContent(lang)
+          : _selectedIndex == 1
+          ? const DialPadScreen()
           : const Center(child: Text("Page not found")),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: _selectedIndex == 0 ? _buildCallFAB() : null,
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(lang),
     );
   }
 
-  Widget _buildCallFAB() {    return Container(
+  Widget _buildCallFAB() {
+    return Container(
       height: 60,
       width: 60,
       decoration: BoxDecoration(
@@ -472,7 +486,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
     );
   }
 
-  Widget _buildDashboardContent() {
+  Widget _buildDashboardContent(String lang) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
       children: [
@@ -486,37 +500,37 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
           childAspectRatio: 1.05,
           children: [
             _buildActionCard(
-              "Quick Registration\nजलद नोंदणी",
+              AppStrings.get('quick_registration', lang),
               Icons.bolt_rounded,
               _warningColor,
               const QuickMukkadamRegistrationScreen(),
             ),
             _buildActionCard(
-              "See Plans\nयोजना पहा",
+              AppStrings.get('see_plans', lang),
               Icons.route_rounded,
               _warningColor,
               const VillagePlansDashboard(),
             ),
             _buildActionCard(
-              "Transport Registration\nवाहतूक नोंदणी",
+              AppStrings.get('transport_registration', lang),
               Icons.local_shipping_rounded,
               _errorColor,
               const TransportProviderScreen(),
             ),
             _buildActionCard(
-              "On Boarded\nनोंदणीकृत",
+              AppStrings.get('on_boarded', lang),
               Icons.people_alt_rounded,
               _successColor,
               const DirectoryScreen(),
             ),
             _buildActionCard(
-              "Mukadam Verification\nमुकादम पडताळणी",
+              AppStrings.get('mukadam_verification', lang),
               Icons.verified_user_rounded,
               _accentColor,
               const MukkadamListScreen(),
             ),
             _buildActionCard(
-              "Transport Verification\nवाहतूक पडताळणी",
+              AppStrings.get('transport_verification', lang),
               Icons.fact_check_rounded,
               _errorColor,
               const PendingVerificationListScreen(),
@@ -534,7 +548,8 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
         String validEventName = title
             .replaceAll('\n', '_')
             .replaceAll(' ', '_')
-            .toLowerCase() + (userProvider.user?.id.toString() ?? 'unknown');
+            .toLowerCase() +
+            (userProvider.user?.id.toString() ?? 'unknown');
 
         await AnalyticsDebugService.logDebugEvent(validEventName, params: {
           'user_id': userProvider.user?.id ?? 'unknown',
@@ -586,7 +601,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
       onTap: () async {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-        final String userId=userProvider.user?.id.toString() ?? 'unknown';
+        final String userId = userProvider.user?.id.toString() ?? 'unknown';
         await AnalyticsDebugService.logDebugEvent('dashboard_wide_card_click ${userId}', params: {
           'card_title': title,
           'subtitle': subtitle,
@@ -650,7 +665,7 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(String lang) {
     return Container(
       decoration: BoxDecoration(
         color: _cardColor,
@@ -664,21 +679,20 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
       ),
       child: SafeArea(
         child: Container(
-          height: 76, // ✅ Increased from 64 to 76
+          height: 76,
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(Icons.grid_view_rounded, "Home / होम", 0),
+              _navItem(Icons.grid_view_rounded, AppStrings.get('home', lang), 0),
               const SizedBox(width: 60),
-              _navItem(Icons.dialpad_rounded, "Dialpad / डायलपॅड", 1),
+              _navItem(Icons.dialpad_rounded, AppStrings.get('dialpad', lang), 1),
             ],
           ),
         ),
       ),
     );
   }
-
 
   Widget _navItem(IconData icon, String label, int index) {
     bool isActive = _selectedIndex == index;
@@ -697,16 +711,16 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
             Icon(
               icon,
               color: isActive ? _accentColor : _textSecondary,
-              size: 22, // ✅ Slightly smaller icon
+              size: 22,
             ),
             const SizedBox(height: 2),
             Text(
               label,
               textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis, // ✅ Prevents overflow
-              maxLines: 1, // ✅ Single line
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
               style: TextStyle(
-                fontSize: 10, // ✅ Compact font size
+                fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 color: isActive ? _accentColor : _textSecondary,
               ),
@@ -716,7 +730,6 @@ class _MukadamDashboardState extends State<MukadamDashboard> with WidgetsBinding
       ),
     );
   }
-
 }
 
 Widget _buildPlanTile(Map<String, dynamic> plan) {

@@ -1,8 +1,14 @@
+// lib/getTransport/get_transport_screen.dart
+// FULL CODE — TransportDirectoryScreen + TransporterCard with LanguageProvider
+
 import 'package:flutter/material.dart';
-import 'package:mukadam_bi/verifications/transporter_verifcations/verification_model.dart';
+//import 'package:mukadam_bi/verifications/transporter_verifcations/verificationmodel.dart';
 import 'package:provider/provider.dart';
 import '../mukadan/authentication/userProvider.dart';
+import '../verifications/transporter_verifcations/verification_model.dart';
 import '../verifications/transporter_verifcations/verificatrion_service.dart';
+import '../provider/language_provider.dart';
+import '../language_jsons/transport_directory_strings.dart';
 
 class TransportDirectoryScreen extends StatefulWidget {
   final String searchQuery;
@@ -18,21 +24,21 @@ class TransportDirectoryScreen extends StatefulWidget {
 }
 
 class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
-  late Future<List<VerificationEntity>> _verificationFuture;
-  final VerificationService _verificationService = VerificationService();
+  late Future<List<VerificationEntity>> verificationFuture;
+  final VerificationService verificationService = VerificationService();
 
-  // ── Professional Color Palette (matching VillagePlansDashboard) ──
-  static const Color _primaryColor = Color(0xFF1E3A5F);
-  static const Color _accentColor = Color(0xFF3B82F6);
-  static const Color _successColor = Color(0xFF10B981);
-  static const Color _warningColor = Color(0xFFF59E0B);
-  static const Color _errorColor = Color(0xFFEF4444);
-  static const Color _backgroundColor = Color(0xFFF8FAFC);
-  static const Color _cardColor = Colors.white;
-  static const Color _textPrimary = Color(0xFF1F2937);
-  static const Color _textSecondary = Color(0xFF6B7280);
-  static const Color _borderColor = Color(0xFFE5E7EB);
-  static const Color _dividerColor = Color(0xFFF3F4F6);
+  // Professional Color Palette
+  static const Color primaryColor = Color(0xFF1E3A5F);
+  static const Color accentColor = Color(0xFF3B82F6);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFF59E0B);
+  static const Color errorColor = Color(0xFFEF4444);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardColor = Colors.white;
+  static const Color textPrimary = Color(0xFF1F2937);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color borderColor = Color(0xFFE5E7EB);
+  static const Color dividerColor = Color(0xFFF3F4F6);
 
   @override
   void initState() {
@@ -43,44 +49,43 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
   void _loadData() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     int userId = userProvider.user?.id ?? 29;
-
     setState(() {
-      _verificationFuture =
-          _verificationService.fetchPendingVerifications(userId);
+      verificationFuture =
+          verificationService.fetchPendingVerifications(userId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+
     return FutureBuilder<List<VerificationEntity>>(
-      future: _verificationFuture,
+      future: verificationFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState();
+          return _buildLoadingState(lang);
         } else if (snapshot.hasError) {
-          return _buildErrorState(snapshot.error.toString());
+          return _buildErrorState(snapshot.error.toString(), lang);
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _buildEmptyState(
             icon: Icons.local_shipping_outlined,
-            title: 'No Transporters',
-            subtitle: 'No transporters found at the moment.',
+            title: TransportDirectoryStrings.get('notransporters', lang),
+            subtitle: TransportDirectoryStrings.get('notransportersfound', lang),
           );
         }
 
         final filteredEntities = snapshot.data!.where((entity) {
-          bool matchesVerification = entity.entity.isAadhaarVerified &&
-              entity.entity.isPanVerified &&
-              entity.entity.isRcVerified &&
+          bool matchesVerification = entity.entity.isAadhaarVerified ||
+              entity.entity.isPanVerified ||
+              entity.entity.isRcVerified ||
               entity.entity.isDlVerified;
 
-          // ✅ UPDATED: Search both English and Marathi names
+          // Search both English and Marathi names
           final query = widget.searchQuery.toLowerCase();
           bool matchesSearch = entity.entity.name
               .toLowerCase()
               .contains(query) ||
-              (entity.entity.marathiName
-                  ?.toLowerCase()
-                  .contains(query) ??
+              (entity.entity.marathiName?.toLowerCase().contains(query) ??
                   false);
 
           return matchesVerification && matchesSearch;
@@ -89,8 +94,8 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
         if (filteredEntities.isEmpty) {
           return _buildEmptyState(
             icon: Icons.search_off_rounded,
-            title: 'No Matches',
-            subtitle: 'No verified transporters match your search.',
+            title: TransportDirectoryStrings.get('nomatches', lang),
+            subtitle: TransportDirectoryStrings.get('noverifiedmatch', lang),
           );
         }
 
@@ -98,8 +103,7 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           itemCount: filteredEntities.length,
           physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
+              parent: AlwaysScrollableScrollPhysics()),
           itemBuilder: (context, index) {
             return TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
@@ -116,8 +120,10 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
               },
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child:
-                TransporterCard(entity: filteredEntities[index].entity),
+                child: TransporterCard(
+                  entity: filteredEntities[index].entity,
+                  lang: lang,
+                ),
               ),
             );
           },
@@ -126,7 +132,8 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
     );
   }
 
-  Widget _buildLoadingState() {
+  // ======================== LOADING STATE ========================
+  Widget _buildLoadingState(String lang) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -137,15 +144,15 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
             height: 44,
             child: CircularProgressIndicator(
               strokeWidth: 3.5,
-              valueColor: const AlwaysStoppedAnimation<Color>(_primaryColor),
-              backgroundColor: _primaryColor.withOpacity(0.12),
+              valueColor: const AlwaysStoppedAnimation<Color>(primaryColor),
+              backgroundColor: primaryColor.withOpacity(0.12),
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Loading transporters...',
-            style: TextStyle(
-              color: _textSecondary,
+          Text(
+            TransportDirectoryStrings.get('loadingtransporters', lang),
+            style: const TextStyle(
+              color: textSecondary,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -155,7 +162,8 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
     );
   }
 
-  Widget _buildErrorState(String error) {
+  // ======================== ERROR STATE ========================
+  Widget _buildErrorState(String error, String lang) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
@@ -167,20 +175,17 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: _errorColor.withOpacity(0.08),
+                color: errorColor.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.warning_amber_rounded,
-                size: 36,
-                color: _errorColor,
-              ),
+              child: const Icon(Icons.warning_amber_rounded,
+                  size: 36, color: errorColor),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Something went wrong',
-              style: TextStyle(
-                color: _textPrimary,
+            Text(
+              TransportDirectoryStrings.get('somethingwentwrong', lang),
+              style: const TextStyle(
+                color: textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
@@ -190,27 +195,24 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
               error,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: _textSecondary,
-                fontSize: 13,
-                height: 1.5,
-              ),
+                  color: textSecondary, fontSize: 13, height: 1.5),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text(
-                'Retry',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              label: Text(
+                TransportDirectoryStrings.get('retry', lang),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w800, fontSize: 13),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
+                backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                padding:
-                const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                    borderRadius: BorderRadius.circular(10)),
                 elevation: 0,
               ),
             ),
@@ -220,6 +222,7 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
     );
   }
 
+  // ======================== EMPTY STATE ========================
   Widget _buildEmptyState({
     required IconData icon,
     required String title,
@@ -236,21 +239,17 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: _dividerColor,
+                color: dividerColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: _borderColor),
+                border: Border.all(color: borderColor),
               ),
-              child: Icon(
-                icon,
-                size: 40,
-                color: _textSecondary,
-              ),
+              child: Icon(icon, size: 40, color: textSecondary),
             ),
             const SizedBox(height: 20),
             Text(
               title,
               style: const TextStyle(
-                color: _textPrimary,
+                color: textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
@@ -260,10 +259,7 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
               subtitle,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: _textSecondary,
-                fontSize: 14,
-                height: 1.5,
-              ),
+                  color: textSecondary, fontSize: 14, height: 1.5),
             ),
           ],
         ),
@@ -272,33 +268,50 @@ class _TransportDirectoryScreenState extends State<TransportDirectoryScreen> {
   }
 }
 
+// ================================================================
+// TransporterCard — now accepts `lang` and uses getDisplayName(lang)
+// ================================================================
 class TransporterCard extends StatelessWidget {
   final EntityDetails entity;
-  const TransporterCard({super.key, required this.entity});
+  final String lang;
 
-  // ── Reuse same palette ──
-  static const Color _primaryColor = Color(0xFF1E3A5F);
-  static const Color _accentColor = Color(0xFF3B82F6);
-  static const Color _successColor = Color(0xFF10B981);
-  static const Color _warningColor = Color(0xFFF59E0B);
-  static const Color _deepOrange = Color(0xFFEA580C);
-  static const Color _backgroundColor = Color(0xFFF8FAFC);
-  static const Color _cardColor = Colors.white;
-  static const Color _textPrimary = Color(0xFF1F2937);
-  static const Color _textSecondary = Color(0xFF6B7280);
-  static const Color _borderColor = Color(0xFFE5E7EB);
-  static const Color _dividerColor = Color(0xFFF3F4F6);
+  const TransporterCard({
+    super.key,
+    required this.entity,
+    required this.lang,
+  });
+
+  // Reuse same palette
+  static const Color primaryColor = Color(0xFF1E3A5F);
+  static const Color accentColor = Color(0xFF3B82F6);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFF59E0B);
+  static const Color deepOrange = Color(0xFFEA580C);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardColor = Colors.white;
+  static const Color textPrimary = Color(0xFF1F2937);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color borderColor = Color(0xFFE5E7EB);
+  static const Color dividerColor = Color(0xFFF3F4F6);
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Language-aware name display
+    final String displayName = entity.getDisplayName(lang);
+
+    // Count verified docs
+    int verifiedCount = [
+      entity.isAadhaarVerified,
+      entity.isPanVerified,
+      entity.isRcVerified,
+      entity.isDlVerified,
+    ].where((v) => v).length;
+
     return Container(
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _borderColor,
-          width: 1,
-        ),
+        border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -318,8 +331,8 @@ class TransporterCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {},
-          splashColor: _warningColor.withOpacity(0.08),
-          highlightColor: _warningColor.withOpacity(0.04),
+          splashColor: warningColor.withOpacity(0.08),
+          highlightColor: warningColor.withOpacity(0.04),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -340,7 +353,7 @@ class TransporterCard extends StatelessWidget {
                     child: Text(
                       entity.name.isNotEmpty
                           ? entity.name[0].toUpperCase()
-                          : "?",
+                          : '?',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -350,19 +363,20 @@ class TransporterCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 14),
+
                 // Content column
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ✅ UPDATED: Shows "NAME / मराठी नाव"
+                      // ✅ Shows ONLY the selected language name
                       Text(
-                        entity.displayName.toUpperCase(),
+                        displayName.toUpperCase(),
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
-                          color: _textPrimary,
+                          color: textPrimary,
                           letterSpacing: -0.2,
                           height: 1.3,
                         ),
@@ -370,20 +384,18 @@ class TransporterCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
+
                       // Location
                       Row(
                         children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 13,
-                            color: _textSecondary,
-                          ),
+                          const Icon(Icons.location_on_outlined,
+                              size: 13, color: textSecondary),
                           const SizedBox(width: 5),
                           Flexible(
                             child: Text(
                               entity.baseLocation,
                               style: const TextStyle(
-                                color: _textSecondary,
+                                color: textSecondary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -394,25 +406,28 @@ class TransporterCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
+
                       // Badge row
                       Row(
                         children: [
+                          // Verified badge
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: _successColor.withOpacity(0.1),
+                              color: successColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.verified_rounded,
+                                const Icon(Icons.verified_rounded,
                                     color: Color(0xFF10B981), size: 13),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Fully Verified',
-                                  style: TextStyle(
+                                  TransportDirectoryStrings.get(
+                                      'fullyverified', lang),
+                                  style: const TextStyle(
                                     color: Color(0xFF10B981),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -422,17 +437,19 @@ class TransporterCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
+
+                          // Docs count badge
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: _dividerColor,
+                              color: dividerColor,
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text(
-                              '4/4 Docs',
-                              style: TextStyle(
-                                color: _textSecondary,
+                            child: Text(
+                              '$verifiedCount/4 ${TransportDirectoryStrings.get('docs', lang)}',
+                              style: const TextStyle(
+                                color: textSecondary,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),

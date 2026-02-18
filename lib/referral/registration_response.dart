@@ -14,12 +14,15 @@ class MukkadamDataModell {
 
   String? marathiName;
 
-  String get displayName {
-    if (marathiName != null && marathiName!.isNotEmpty) {
-      return '$mukkadamName / $marathiName';
+  // ✅ NEW — shows ONLY the selected language
+  String getDisplayName(String lang) {
+    if (lang == 'mr' && marathiName != null && marathiName!.isNotEmpty) {
+      return marathiName!;       // Marathi ONLY
     }
-    return mukkadamName;
+    return mukkadamName;          // English ONLY
   }
+
+
 
 
   MukkadamDataModell({

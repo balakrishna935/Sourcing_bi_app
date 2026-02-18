@@ -1,9 +1,14 @@
+// lib/verifications/transporter_verifcations/verification_transporter_screen.dart
+// FULL CODE — PendingVerificationListScreen with LanguageProvider
+
 import 'package:flutter/material.dart';
 import 'package:mukadam_bi/verifications/transporter_verifcations/verification_model.dart';
 import 'package:mukadam_bi/verifications/transporter_verifcations/verificatrion_service.dart';
 import 'package:provider/provider.dart';
+import '../../language_jsons/transport_verification_string.dart';
 import '../../mukadan/authentication/userProvider.dart';
 import '../transporter_update_screen.dart';
+import '../../provider/language_provider.dart';
 
 class PendingVerificationListScreen extends StatefulWidget {
   const PendingVerificationListScreen({super.key});
@@ -15,21 +20,21 @@ class PendingVerificationListScreen extends StatefulWidget {
 
 class _PendingVerificationListScreenState
     extends State<PendingVerificationListScreen> {
-  late Future<List<VerificationEntity>> _futureVerifications;
-  final VerificationService _service = VerificationService();
-  String _searchQuery = "";
+  late Future<List<VerificationEntity>> futureVerifications;
+  final VerificationService service = VerificationService();
+  String searchQuery = '';
 
-  // ── Color Palette ──
-  static const Color _primaryColor = Color(0xFF1E3A5F);
-  static const Color _accentColor = Color(0xFF3B82F6);
-  static const Color _successColor = Color(0xFF10B981);
-  static const Color _warningColor = Color(0xFFF59E0B);
-  static const Color _errorColor = Color(0xFFEF4444);
-  static const Color _backgroundColor = Color(0xFFF8FAFC);
-  static const Color _cardColor = Colors.white;
-  static const Color _textPrimary = Color(0xFF1F2937);
-  static const Color _textSecondary = Color(0xFF6B7280);
-  static const Color _borderColor = Color(0xFFE5E7EB);
+  // Color Palette
+  static const Color primaryColor = Color(0xFF1E3A5F);
+  static const Color accentColor = Color(0xFF3B82F6);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFF59E0B);
+  static const Color errorColor = Color(0xFFEF4444);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardColor = Colors.white;
+  static const Color textPrimary = Color(0xFF1F2937);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color borderColor = Color(0xFFE5E7EB);
 
   @override
   void initState() {
@@ -41,21 +46,23 @@ class _PendingVerificationListScreenState
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final int userId = userProvider.user?.id ?? 29;
     setState(() {
-      _futureVerifications = _service.fetchPendingVerifications(userId);
+      futureVerifications = service.fetchPendingVerifications(userId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: _primaryColor,
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 1,
-        title: const Text(
-          'Transport Verification',
-          style: TextStyle(
+        title: Text(
+          TransportVerificationStrings.get('transportverification', lang),
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
           ),
@@ -67,107 +74,106 @@ class _PendingVerificationListScreenState
       ),
       body: Column(
         children: [
-          // ── Search Bar ──
+          // Search Bar
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
             child: TextField(
               onChanged: (value) {
                 setState(() {
-                  _searchQuery = value.toLowerCase();
+                  searchQuery = value.toLowerCase();
                 });
               },
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: _textPrimary,
+                color: textPrimary,
               ),
               decoration: InputDecoration(
-                hintText: "Search by name...",
+                hintText:
+                TransportVerificationStrings.get('searchbyname', lang),
                 hintStyle: TextStyle(
-                  color: _textSecondary.withOpacity(0.6),
+                  color: textSecondary.withOpacity(0.6),
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
                 prefixIcon: const Icon(Icons.search_rounded,
-                    color: _accentColor, size: 20),
-                suffixIcon: _searchQuery.isNotEmpty
+                    color: accentColor, size: 20),
+                suffixIcon: searchQuery.isNotEmpty
                     ? IconButton(
                   icon: Icon(Icons.close_rounded,
-                      color: _textSecondary.withOpacity(0.5), size: 18),
+                      color: textSecondary.withOpacity(0.5), size: 18),
                   onPressed: () {
                     setState(() {
-                      _searchQuery = "";
+                      searchQuery = '';
                     });
                   },
                 )
                     : null,
                 filled: true,
-                fillColor: _cardColor,
+                fillColor: cardColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _borderColor),
+                  borderSide: BorderSide(color: borderColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _borderColor),
+                  borderSide: BorderSide(color: borderColor),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                  const BorderSide(color: _accentColor, width: 1.5),
+                  const BorderSide(color: accentColor, width: 1.5),
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
             ),
           ),
-
-          // ── Content ──
+          // Content
           Expanded(
             child: FutureBuilder<List<VerificationEntity>>(
-              future: _futureVerifications,
+              future: futureVerifications,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return _buildLoading();
                 } else if (snapshot.hasError) {
-                  return _buildErrorWidget(snapshot.error.toString());
+                  return _buildErrorWidget(snapshot.error.toString(), lang);
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return _buildEmptyWidget();
+                  return _buildEmptyWidget(lang);
                 }
 
                 final filteredEntities = snapshot.data!.where((item) {
                   if (item.entity.isFullyVerified) return false;
-                  if (_searchQuery.isEmpty) return true;
-                  // ✅ UPDATED: Search both English and Marathi names
+                  if (searchQuery.isEmpty) return true;
+                  // Search both English and Marathi names
                   return item.entity.name
                       .toLowerCase()
-                      .contains(_searchQuery) ||
+                      .contains(searchQuery) ||
                       (item.entity.marathiName
                           ?.toLowerCase()
-                          .contains(_searchQuery) ??
+                          .contains(searchQuery) ??
                           false);
                 }).toList();
 
                 if (filteredEntities.isEmpty) {
-                  return _buildEmptyWidget();
+                  return _buildEmptyWidget(lang);
                 }
 
                 return RefreshIndicator(
                   onRefresh: () async {
                     _loadVerifications();
-                    await _futureVerifications;
+                    await futureVerifications;
                   },
-                  color: _primaryColor,
+                  color: primaryColor,
                   child: ListView.builder(
                     physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
-                    ),
+                        parent: BouncingScrollPhysics()),
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: filteredEntities.length + 1,
                     itemBuilder: (context, index) {
                       if (index == 0) {
-                        return _buildResultsHeader(filteredEntities.length);
+                        return _buildResultsHeader(
+                            filteredEntities.length, lang);
                       }
-
                       final item = filteredEntities[index - 1];
                       final transporter = item.entity;
 
@@ -185,10 +191,12 @@ class _PendingVerificationListScreenState
                         transporter.isVoterIdVerified,
                       ].where((v) => v).length;
 
-                      String statusText =
-                      anyVerified ? "Pending" : "Not Verified";
+                      String statusText = anyVerified
+                          ? TransportVerificationStrings.get('pending', lang)
+                          : TransportVerificationStrings.get(
+                          'notverified', lang);
                       Color themeColor =
-                      anyVerified ? _warningColor : _errorColor;
+                      anyVerified ? warningColor : errorColor;
                       IconData statusIcon = anyVerified
                           ? Icons.timelapse_rounded
                           : Icons.cancel_rounded;
@@ -199,6 +207,7 @@ class _PendingVerificationListScreenState
                         themeColor: themeColor,
                         statusIcon: statusIcon,
                         verifiedCount: verifiedCount,
+                        lang: lang,
                       );
                     },
                   ),
@@ -211,18 +220,21 @@ class _PendingVerificationListScreenState
     );
   }
 
-  // ── RESULTS HEADER ──
-  Widget _buildResultsHeader(int count) {
+  // ======================== RESULTS HEADER ========================
+  Widget _buildResultsHeader(int count, String lang) {
+    final resultWord = count != 1
+        ? TransportVerificationStrings.get('results', lang)
+        : TransportVerificationStrings.get('result', lang);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, top: 4),
       child: Row(
         children: [
           Text(
-            '$count result${count != 1 ? 's' : ''}',
+            '$count $resultWord',
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: _accentColor,
+              color: accentColor,
             ),
           ),
           const Spacer(),
@@ -231,22 +243,26 @@ class _PendingVerificationListScreenState
     );
   }
 
-  // ── VERIFICATION CARD ──
+  // ======================== VERIFICATION CARD ========================
   Widget _buildVerificationCard({
     required EntityDetails transporter,
     required String statusText,
     required Color themeColor,
     required IconData statusIcon,
     required int verifiedCount,
+    required String lang,
   }) {
+    // ✅ Language-aware name display
+    final String displayName = transporter.getDisplayName(lang);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: _borderColor),
+        side: BorderSide(color: borderColor),
       ),
-      color: _cardColor,
+      color: cardColor,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () async {
@@ -257,22 +273,20 @@ class _PendingVerificationListScreenState
                   TransporterUpdateScreen(transporterId: transporter.id),
             ),
           );
-          if (updated == true) {
-            _loadVerifications();
-          }
+          if (updated == true) _loadVerifications();
         },
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Top Row: Avatar + Name + Status ──
+              // Top Row: Avatar + Name + Status
               Row(
                 children: [
-                  // Avatar — uses original English name initial
+                  // Avatar — always uses English name initial
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: _primaryColor,
+                    backgroundColor: primaryColor,
                     child: Text(
                       transporter.name.isNotEmpty
                           ? transporter.name[0].toUpperCase()
@@ -285,38 +299,45 @@ class _PendingVerificationListScreenState
                     ),
                   ),
                   const SizedBox(width: 12),
+
                   // Name + Vehicle Type
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          // ✅ UPDATED: Shows "NAME / मराठी नाव"
-                          transporter.displayName.toUpperCase(),
+                          // ✅ Shows ONLY the selected language name
+                          displayName.toUpperCase(),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: _textPrimary,
+                            color: textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          transporter.vehicleType ?? 'Transporter',
+                          // ✅ Language-aware vehicle type
+                          transporter.getDisplayVehicleType(
+                            lang,
+                            TransportVerificationStrings.get(
+                                'transporter', lang),
+                          ),
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
-                            color: _textSecondary,
+                            color: textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
+
                   // Status Badge
                   Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: themeColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -342,18 +363,17 @@ class _PendingVerificationListScreenState
 
               const SizedBox(height: 12),
 
-              // ── Location ──
+              // Location
               Row(
                 children: [
-                  const Icon(Icons.location_on_outlined,
-                      size: 14, color: _textSecondary),
-                  const SizedBox(width: 4),
+
                   Expanded(
                     child: Text(
-                      transporter.baseLocation,
+                      // ✅ Language-aware location
+                      transporter.getDisplayLocation(lang),
                       style: const TextStyle(
                         fontSize: 12,
-                        color: _textSecondary,
+                        color: textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 1,
@@ -365,7 +385,7 @@ class _PendingVerificationListScreenState
 
               const SizedBox(height: 12),
 
-              // ── Progress Bar ──
+              // Progress
               Row(
                 children: [
                   const SizedBox(width: 10),
@@ -382,18 +402,31 @@ class _PendingVerificationListScreenState
 
               const SizedBox(height: 12),
 
-              // ── Verification Chips ──
+              // Verification Chips
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: [
                   _buildVerificationChip(
-                      "Aadhaar", transporter.isAadhaarVerified),
-                  _buildVerificationChip("PAN", transporter.isPanVerified),
-                  _buildVerificationChip("RC", transporter.isRcVerified),
-                  _buildVerificationChip("DL", transporter.isDlVerified),
+                    TransportVerificationStrings.get('aadhaar', lang),
+                    transporter.isAadhaarVerified,
+                  ),
                   _buildVerificationChip(
-                      "Voter ID", transporter.isVoterIdVerified),
+                    TransportVerificationStrings.get('pan', lang),
+                    transporter.isPanVerified,
+                  ),
+                  _buildVerificationChip(
+                    TransportVerificationStrings.get('rc', lang),
+                    transporter.isRcVerified,
+                  ),
+                  _buildVerificationChip(
+                    TransportVerificationStrings.get('dl', lang),
+                    transporter.isDlVerified,
+                  ),
+                  _buildVerificationChip(
+                    TransportVerificationStrings.get('voterid', lang),
+                    transporter.isVoterIdVerified,
+                  ),
                 ],
               ),
             ],
@@ -403,9 +436,9 @@ class _PendingVerificationListScreenState
     );
   }
 
-  // ── VERIFICATION CHIP ──
+  // ======================== VERIFICATION CHIP ========================
   Widget _buildVerificationChip(String label, bool isVerified) {
-    final Color chipColor = isVerified ? _successColor : _errorColor;
+    final Color chipColor = isVerified ? successColor : errorColor;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -435,35 +468,33 @@ class _PendingVerificationListScreenState
     );
   }
 
-  // ── LOADING ──
+  // ======================== LOADING ========================
   Widget _buildLoading() {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(48),
-        child: CircularProgressIndicator(
-          color: _primaryColor,
-          strokeWidth: 2.5,
-        ),
+        child:
+        CircularProgressIndicator(color: primaryColor, strokeWidth: 2.5),
       ),
     );
   }
 
-  // ── ERROR WIDGET ──
-  Widget _buildErrorWidget(String errorMessage) {
+  // ======================== ERROR WIDGET ========================
+  Widget _buildErrorWidget(String errorMessage, String lang) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off_rounded, size: 48, color: _errorColor),
+            const Icon(Icons.wifi_off_rounded, size: 48, color: errorColor),
             const SizedBox(height: 16),
-            const Text(
-              'Something went wrong',
-              style: TextStyle(
+            Text(
+              TransportVerificationStrings.get('somethingwentwrong', lang),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: _textPrimary,
+                color: textPrimary,
               ),
             ),
             const SizedBox(height: 6),
@@ -472,7 +503,7 @@ class _PendingVerificationListScreenState
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 12,
-                color: _textSecondary,
+                color: textSecondary,
                 height: 1.4,
               ),
               maxLines: 3,
@@ -482,16 +513,18 @@ class _PendingVerificationListScreenState
             ElevatedButton.icon(
               onPressed: _loadVerifications,
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Try Again',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              label: Text(
+                TransportVerificationStrings.get('tryagain', lang),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, fontSize: 13),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
+                backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                padding:
-                const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                    borderRadius: BorderRadius.circular(10)),
                 elevation: 0,
               ),
             ),
@@ -501,8 +534,8 @@ class _PendingVerificationListScreenState
     );
   }
 
-  // ── EMPTY WIDGET ──
-  Widget _buildEmptyWidget() {
+  // ======================== EMPTY WIDGET ========================
+  Widget _buildEmptyWidget(String lang) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48),
@@ -511,21 +544,21 @@ class _PendingVerificationListScreenState
           children: [
             Icon(Icons.inbox_rounded, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 16),
-            const Text(
-              'No Verifications Found',
-              style: TextStyle(
+            Text(
+              TransportVerificationStrings.get('noverificationsfound', lang),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: _textPrimary,
+                color: textPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'No matching pending verifications\nwere found.',
+            Text(
+              TransportVerificationStrings.get('nomatchingpending', lang),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
-                color: _textSecondary,
+                color: textSecondary,
                 height: 1.4,
               ),
             ),
@@ -533,16 +566,18 @@ class _PendingVerificationListScreenState
             OutlinedButton.icon(
               onPressed: _loadVerifications,
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Refresh',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              label: Text(
+                TransportVerificationStrings.get('refresh', lang),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, fontSize: 13),
+              ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: _primaryColor,
-                side: const BorderSide(color: _borderColor, width: 1.5),
-                padding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                foregroundColor: primaryColor,
+                side: const BorderSide(color: borderColor, width: 1.5),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                    borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ],

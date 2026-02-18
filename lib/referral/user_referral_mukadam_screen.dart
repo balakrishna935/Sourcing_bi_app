@@ -1,12 +1,19 @@
+// lib/referral/user_referral_mukadam_screen.dart
+// FULL CODE — DirectoryScreen + MukkadamCard with LanguageProvider
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mukadam_bi/referral/referral_service.dart';
+//import 'package:mukadam_bi/referral/referralservice.dart';
 import 'package:mukadam_bi/referral/registration_response.dart';
 import 'package:provider/provider.dart';
+//import '../getTransport/get_transport_screen.dart';
 import '../getTransport/gettransportscreen.dart';
 import '../mukadan/authentication/userProvider.dart';
-import '../verifications/mukadam_dashboard/mukadam_service.dart';
-import '../verifications/mukadam_dashboard/mukkadam_data_model.dart';
+//import '../verifications/mukadam_dashboard/mukadamservice.dart';
+//import '../verifications/mukadam_dashboard/mukkadamdatamodel.dart';
+import '../provider/language_provider.dart';
+import '../language_jsons/directory_strings.dart';
 
 class DirectoryScreen extends StatefulWidget {
   const DirectoryScreen({super.key});
@@ -17,36 +24,36 @@ class DirectoryScreen extends StatefulWidget {
 
 class _DirectoryScreenState extends State<DirectoryScreen>
     with SingleTickerProviderStateMixin {
-  late Future<List<MukkadamDataModell>> _mukkadamFuture;
-  String _searchQuery = "";
-  late TabController _tabController;
-  final TextEditingController _searchController = TextEditingController();
+  late Future<List<MukkadamDataModell>> mukkadamFuture;
+  String searchQuery = '';
+  late TabController tabController;
+  final TextEditingController searchController = TextEditingController();
 
-  // ── Professional Color Palette (matching VillagePlansDashboard) ──
-  static const Color _primaryColor = Color(0xFF1E3A5F);
-  static const Color _accentColor = Color(0xFF3B82F6);
-  static const Color _successColor = Color(0xFF10B981);
-  static const Color _warningColor = Color(0xFFF59E0B);
-  static const Color _errorColor = Color(0xFFEF4444);
-  static const Color _backgroundColor = Color(0xFFF8FAFC);
-  static const Color _cardColor = Colors.white;
-  static const Color _textPrimary = Color(0xFF1F2937);
-  static const Color _textSecondary = Color(0xFF6B7280);
-  static const Color _borderColor = Color(0xFFE5E7EB);
-  static const Color _dividerColor = Color(0xFFF3F4F6);
-  static const Color _verifiedGreen = Color(0xFF10B981);
+  // Professional Color Palette
+  static const Color primaryColor = Color(0xFF1E3A5F);
+  static const Color accentColor = Color(0xFF3B82F6);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFF59E0B);
+  static const Color errorColor = Color(0xFFEF4444);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardColor = Colors.white;
+  static const Color textPrimary = Color(0xFF1F2937);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color borderColor = Color(0xFFE5E7EB);
+  static const Color dividerColor = Color(0xFFF3F4F6);
+  static const Color verifiedGreen = Color(0xFF10B981);
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    tabController = TabController(length: 2, vsync: this);
     _loadData();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
+    tabController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
@@ -54,31 +61,33 @@ class _DirectoryScreenState extends State<DirectoryScreen>
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (userProvider.user != null) {
       setState(() {
-        _mukkadamFuture =
+        mukkadamFuture =
             MukkadamServiceee().fetchVerifiedMukkadams(userProvider.user!.id);
       });
     } else {
       setState(() {
-        _mukkadamFuture = Future.error("User not logged in");
+        mukkadamFuture = Future.error('User not logged in');
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: _backgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: _primaryColor,
+        backgroundColor: primaryColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'onboarded Members',
-          style: TextStyle(
+        title: Text(
+          DirectoryStrings.get('onboardedmembers', lang),
+          style: const TextStyle(
             fontSize: 19,
             fontWeight: FontWeight.w900,
             color: Colors.white,
@@ -88,16 +97,14 @@ class _DirectoryScreenState extends State<DirectoryScreen>
       ),
       body: Column(
         children: [
-          _buildSearchBar(),
-          _buildTabBar(),
+          _buildSearchBar(lang),
+          _buildTabBar(lang),
           Expanded(
             child: TabBarView(
-              controller: _tabController,
+              controller: tabController,
               children: [
-                _buildRegistrationList(),
-                TransportDirectoryScreen(
-                  searchQuery: _searchQuery,
-                ),
+                _buildRegistrationList(lang),
+                TransportDirectoryScreen(searchQuery: searchQuery),
               ],
             ),
           ),
@@ -106,17 +113,15 @@ class _DirectoryScreenState extends State<DirectoryScreen>
     );
   }
 
-  Widget _buildSearchBar() {
+  // ======================== SEARCH BAR ========================
+  Widget _buildSearchBar(String lang) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       child: Container(
         decoration: BoxDecoration(
-          color: _cardColor,
+          color: cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: _borderColor,
-            width: 1,
-          ),
+          border: Border.all(color: borderColor, width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
@@ -126,48 +131,41 @@ class _DirectoryScreenState extends State<DirectoryScreen>
           ],
         ),
         child: TextField(
-          controller: _searchController,
+          controller: searchController,
           onChanged: (value) {
             setState(() {
-              _searchQuery = value.toLowerCase();
+              searchQuery = value.toLowerCase();
             });
           },
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: _textPrimary,
+            color: textPrimary,
           ),
           decoration: InputDecoration(
-            hintText: 'Search by name...',
+            hintText: DirectoryStrings.get('searchbyname', lang),
             hintStyle: const TextStyle(
-              color: _textSecondary,
+              color: textSecondary,
               fontWeight: FontWeight.w400,
               fontSize: 15,
             ),
             prefixIcon: const Padding(
               padding: EdgeInsets.only(left: 14, right: 10),
-              child: Icon(
-                Icons.search_rounded,
-                color: _textSecondary,
-                size: 22,
-              ),
+              child: Icon(Icons.search_rounded, color: textSecondary, size: 22),
             ),
             prefixIconConstraints: const BoxConstraints(minWidth: 46),
-            suffixIcon: _searchQuery.isNotEmpty
+            suffixIcon: searchQuery.isNotEmpty
                 ? GestureDetector(
               onTap: () {
-                _searchController.clear();
+                searchController.clear();
                 setState(() {
-                  _searchQuery = "";
+                  searchQuery = '';
                 });
               },
               child: const Padding(
                 padding: EdgeInsets.only(right: 12),
-                child: Icon(
-                  Icons.close_rounded,
-                  color: _textSecondary,
-                  size: 20,
-                ),
+                child: Icon(Icons.close_rounded,
+                    color: textSecondary, size: 20),
               ),
             )
                 : null,
@@ -182,18 +180,19 @@ class _DirectoryScreenState extends State<DirectoryScreen>
     );
   }
 
-  Widget _buildTabBar() {
+  // ======================== TAB BAR ========================
+  Widget _buildTabBar(String lang) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       decoration: BoxDecoration(
-        color: _dividerColor,
+        color: dividerColor,
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(4),
       child: TabBar(
-        controller: _tabController,
+        controller: tabController,
         indicator: BoxDecoration(
-          color: _cardColor,
+          color: cardColor,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
@@ -205,8 +204,8 @@ class _DirectoryScreenState extends State<DirectoryScreen>
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
-        labelColor: _primaryColor,
-        unselectedLabelColor: _textSecondary,
+        labelColor: primaryColor,
+        unselectedLabelColor: textSecondary,
         labelStyle: const TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 13,
@@ -217,15 +216,15 @@ class _DirectoryScreenState extends State<DirectoryScreen>
           fontSize: 13,
         ),
         splashBorderRadius: BorderRadius.circular(10),
-        tabs: const [
+        tabs: [
           Tab(
             height: 42,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.grid_view_rounded, size: 18),
-                SizedBox(width: 8),
-                Text('Registrations'),
+                const Icon(Icons.grid_view_rounded, size: 18),
+                const SizedBox(width: 8),
+                Text(DirectoryStrings.get('registrations', lang)),
               ],
             ),
           ),
@@ -234,9 +233,9 @@ class _DirectoryScreenState extends State<DirectoryScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.local_shipping_rounded, size: 18),
-                SizedBox(width: 8),
-                Text('Transport'),
+                const Icon(Icons.local_shipping_rounded, size: 18),
+                const SizedBox(width: 8),
+                Text(DirectoryStrings.get('transport', lang)),
               ],
             ),
           ),
@@ -245,52 +244,52 @@ class _DirectoryScreenState extends State<DirectoryScreen>
     );
   }
 
-  Widget _buildRegistrationList() {
+  // ======================== REGISTRATION LIST ========================
+  Widget _buildRegistrationList(String lang) {
     return FutureBuilder<List<MukkadamDataModell>>(
-      future: _mukkadamFuture,
+      future: mukkadamFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState();
+          return _buildLoadingState(lang);
         } else if (snapshot.hasError) {
-          return _buildErrorState(snapshot.error.toString());
+          return _buildErrorState(snapshot.error.toString(), lang);
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _buildEmptyState(
             icon: Icons.people_outline_rounded,
-            title: 'No Registrations',
-            subtitle: 'No registrations found.',
+            title: DirectoryStrings.get('noregistrations', lang),
+            subtitle: DirectoryStrings.get('noregistrationsfound', lang),
+            lang: lang,
           );
         }
 
         final filteredMukkadams = snapshot.data!.where((m) {
-          // ✅ UPDATED: Search both English and Marathi names
+          // Search both English and Marathi names
           bool matchesSearch =
-              m.mukkadamName.toLowerCase().contains(_searchQuery) ||
-                  (m.marathiName?.toLowerCase().contains(_searchQuery) ?? false);
+              m.mukkadamName.toLowerCase().contains(searchQuery) ||
+                  (m.marathiName?.toLowerCase().contains(searchQuery) ?? false);
           bool isVerified =
-              m.isFullyVerified || (m.isPanVerified && m.isAadharVerified);
+              m.isFullyVerified || m.isPanVerified || m.isAadharVerified;
           return matchesSearch && isVerified;
         }).toList();
 
         if (filteredMukkadams.isEmpty) {
           return _buildEmptyState(
             icon: Icons.verified_user_outlined,
-            title: 'No Verified Registrations',
-            subtitle: 'No verified registrations found.',
+            title: DirectoryStrings.get('noverifiedregistrations', lang),
+            subtitle: DirectoryStrings.get('noverifiedregistrationsfound', lang),
+            lang: lang,
           );
         }
 
         return RefreshIndicator(
-          color: _primaryColor,
-          backgroundColor: _cardColor,
-          onRefresh: () async {
-            _loadData();
-          },
+          color: primaryColor,
+          backgroundColor: cardColor,
+          onRefresh: () async => _loadData(),
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             itemCount: filteredMukkadams.length,
             physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
+                parent: AlwaysScrollableScrollPhysics()),
             itemBuilder: (context, index) {
               return TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
@@ -309,6 +308,7 @@ class _DirectoryScreenState extends State<DirectoryScreen>
                   padding: const EdgeInsets.only(bottom: 12),
                   child: MukkadamCard(
                     mukkadam: filteredMukkadams[index],
+                    lang: lang,
                   ),
                 ),
               );
@@ -319,7 +319,8 @@ class _DirectoryScreenState extends State<DirectoryScreen>
     );
   }
 
-  Widget _buildLoadingState() {
+  // ======================== LOADING STATE ========================
+  Widget _buildLoadingState(String lang) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -330,15 +331,15 @@ class _DirectoryScreenState extends State<DirectoryScreen>
             height: 44,
             child: CircularProgressIndicator(
               strokeWidth: 3.5,
-              valueColor: const AlwaysStoppedAnimation<Color>(_primaryColor),
-              backgroundColor: _primaryColor.withOpacity(0.12),
+              valueColor: const AlwaysStoppedAnimation<Color>(primaryColor),
+              backgroundColor: primaryColor.withOpacity(0.12),
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Loading directory...',
-            style: TextStyle(
-              color: _textSecondary,
+          Text(
+            DirectoryStrings.get('loadingdirectory', lang),
+            style: const TextStyle(
+              color: textSecondary,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -348,7 +349,8 @@ class _DirectoryScreenState extends State<DirectoryScreen>
     );
   }
 
-  Widget _buildErrorState(String error) {
+  // ======================== ERROR STATE ========================
+  Widget _buildErrorState(String error, String lang) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
@@ -360,20 +362,17 @@ class _DirectoryScreenState extends State<DirectoryScreen>
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: _errorColor.withOpacity(0.08),
+                color: errorColor.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.warning_amber_rounded,
-                size: 36,
-                color: _errorColor,
-              ),
+              child: const Icon(Icons.warning_amber_rounded,
+                  size: 36, color: errorColor),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Something went wrong',
-              style: TextStyle(
-                color: _textPrimary,
+            Text(
+              DirectoryStrings.get('somethingwentwrong', lang),
+              style: const TextStyle(
+                color: textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
@@ -383,27 +382,24 @@ class _DirectoryScreenState extends State<DirectoryScreen>
               error,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: _textSecondary,
-                fontSize: 13,
-                height: 1.5,
-              ),
+                  color: textSecondary, fontSize: 13, height: 1.5),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text(
-                'Retry',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              label: Text(
+                DirectoryStrings.get('retry', lang),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w800, fontSize: 13),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
+                backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                padding:
-                const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                    borderRadius: BorderRadius.circular(10)),
                 elevation: 0,
               ),
             ),
@@ -413,10 +409,12 @@ class _DirectoryScreenState extends State<DirectoryScreen>
     );
   }
 
+  // ======================== EMPTY STATE ========================
   Widget _buildEmptyState({
     required IconData icon,
     required String title,
     required String subtitle,
+    required String lang,
   }) {
     return Center(
       child: SingleChildScrollView(
@@ -429,21 +427,17 @@ class _DirectoryScreenState extends State<DirectoryScreen>
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: _dividerColor,
+                color: dividerColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: _borderColor),
+                border: Border.all(color: borderColor),
               ),
-              child: Icon(
-                icon,
-                size: 40,
-                color: _textSecondary,
-              ),
+              child: Icon(icon, size: 40, color: textSecondary),
             ),
             const SizedBox(height: 20),
             Text(
               title,
               style: const TextStyle(
-                color: _textPrimary,
+                color: textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
@@ -453,10 +447,7 @@ class _DirectoryScreenState extends State<DirectoryScreen>
               subtitle,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: _textSecondary,
-                fontSize: 14,
-                height: 1.5,
-              ),
+                  color: textSecondary, fontSize: 14, height: 1.5),
             ),
           ],
         ),
@@ -465,30 +456,39 @@ class _DirectoryScreenState extends State<DirectoryScreen>
   }
 }
 
+// ================================================================
+// MukkadamCard — now accepts `lang` and uses getDisplayName(lang)
+// ================================================================
 class MukkadamCard extends StatelessWidget {
   final MukkadamDataModell mukkadam;
-  const MukkadamCard({super.key, required this.mukkadam});
+  final String lang;
 
-  // ── Reuse same palette ──
-  static const Color _primaryColor = Color(0xFF1E3A5F);
-  static const Color _accentColor = Color(0xFF3B82F6);
-  static const Color _successColor = Color(0xFF10B981);
-  static const Color _backgroundColor = Color(0xFFF8FAFC);
-  static const Color _cardColor = Colors.white;
-  static const Color _textPrimary = Color(0xFF1F2937);
-  static const Color _textSecondary = Color(0xFF6B7280);
-  static const Color _borderColor = Color(0xFFE5E7EB);
+  const MukkadamCard({
+    super.key,
+    required this.mukkadam,
+    required this.lang,
+  });
+
+  // Reuse same palette
+  static const Color primaryColor = Color(0xFF1E3A5F);
+  static const Color accentColor = Color(0xFF3B82F6);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardColor = Colors.white;
+  static const Color textPrimary = Color(0xFF1F2937);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color borderColor = Color(0xFFE5E7EB);
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Language-aware name display
+    final String displayName = mukkadam.getDisplayName(lang);
+
     return Container(
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _borderColor,
-          width: 1,
-        ),
+        border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -508,21 +508,19 @@ class MukkadamCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {},
-          splashColor: _accentColor.withOpacity(0.06),
-          highlightColor: _accentColor.withOpacity(0.03),
+          splashColor: accentColor.withOpacity(0.06),
+          highlightColor: accentColor.withOpacity(0.03),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
+                // Avatar — always uses English name initial
                 Container(
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF3B82F6),
-                        Color(0xFF1E3A5F),
-                      ],
+                      colors: [Color(0xFF3B82F6), Color(0xFF1E3A5F)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -532,7 +530,7 @@ class MukkadamCard extends StatelessWidget {
                     child: Text(
                       mukkadam.mukkadamName.isNotEmpty
                           ? mukkadam.mukkadamName[0].toUpperCase()
-                          : "?",
+                          : '?',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -542,18 +540,20 @@ class MukkadamCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 14),
+
+                // Content
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ✅ UPDATED: Shows "NAME / मराठी नाव"
+                      // ✅ Shows ONLY the selected language name
                       Text(
-                        mukkadam.displayName.toUpperCase(),
+                        displayName.toUpperCase(),
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
-                          color: _textPrimary,
+                          color: textPrimary,
                           letterSpacing: -0.2,
                           height: 1.3,
                         ),
@@ -561,21 +561,20 @@ class MukkadamCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 5),
+
+                      // Location + Crew
                       Row(
                         children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 13,
-                            color: _textSecondary,
-                          ),
+                          const Icon(Icons.location_on_outlined,
+                              size: 13, color: textSecondary),
                           const SizedBox(width: 3),
                           Flexible(
                             child: Text(
                               mukkadam.village.isNotEmpty
-                                  ? mukkadam.village
+                                  ? '${mukkadam.village}, ${mukkadam.district}'
                                   : mukkadam.district,
                               style: const TextStyle(
-                                color: _textSecondary,
+                                color: textSecondary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -585,24 +584,17 @@ class MukkadamCard extends StatelessWidget {
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 6),
-                            child: Text(
-                              '•',
-                              style: TextStyle(
-                                color: _borderColor,
-                                fontSize: 12,
-                              ),
-                            ),
+                            child: Text('•',
+                                style: TextStyle(
+                                    color: borderColor, fontSize: 12)),
                           ),
-                          const Icon(
-                            Icons.groups_outlined,
-                            size: 14,
-                            color: _textSecondary,
-                          ),
+                          const Icon(Icons.groups_outlined,
+                              size: 14, color: textSecondary),
                           const SizedBox(width: 3),
                           Text(
-                            'Crew: ${mukkadam.crewSize.isNotEmpty ? mukkadam.crewSize : '-'}',
+                            '${DirectoryStrings.get('crew', lang)}: ${mukkadam.crewSize.isNotEmpty ? mukkadam.crewSize : '-'}',
                             style: const TextStyle(
-                              color: _textSecondary,
+                              color: textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -610,22 +602,24 @@ class MukkadamCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
+
+                      // Verified badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _successColor.withOpacity(0.1),
+                          color: successColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.verified_rounded,
+                            const Icon(Icons.verified_rounded,
                                 color: Color(0xFF10B981), size: 13),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
-                              'Fully Verified',
-                              style: TextStyle(
+                              DirectoryStrings.get('fullyverified', lang),
+                              style: const TextStyle(
                                 color: Color(0xFF10B981),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,

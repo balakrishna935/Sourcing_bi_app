@@ -27,13 +27,12 @@ class Transporter {
   String? marathiName;
 
   // ✅ NEW: Bilingual display — "English / मराठी"
-  String get displayName {
-    if (marathiName != null && marathiName!.isNotEmpty) {
-      return '$name / $marathiName';
+  String getDisplayName(String lang) {
+    if (lang == 'mr' && marathiName != null && marathiName!.isNotEmpty) {
+      return marathiName!;       // Marathi ONLY
     }
-    return name;
+    return name;                  // English ONLY
   }
-
   Transporter({
     required this.id,
     required this.name,

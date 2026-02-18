@@ -25,12 +25,16 @@ class VillageVisitPlan {
     this.marathiPlanName,
   });
 
-  String get displayName {
-    if (marathiPlanName != null && marathiPlanName!.isNotEmpty) {
-      return '$planName / $marathiPlanName';
+  String getDisplayName(String lang) {
+    if (lang == 'mr' && marathiPlanName != null && marathiPlanName!.isNotEmpty) {
+      return marathiPlanName!;       // Marathi only
     }
-    return planName;
+    return planName;                  // English only
   }
+
+  // Keep old getter for backward compat if needed elsewhere
+  String get displayName => planName;
+
 
   factory VillageVisitPlan.fromJson(Map<String, dynamic> json) {
     return VillageVisitPlan(
@@ -144,33 +148,42 @@ class VillageVisit {
   });
 
   // ✅ NEW: Display getters for English / Marathi
-  String get displayVillage {
-    if (marathiVillage != null && marathiVillage!.isNotEmpty) {
-      return '$village / $marathiVillage';
+  String getDisplayVillage(String lang) {
+    if (lang == 'mr' && marathiVillage != null && marathiVillage!.isNotEmpty) {
+      return marathiVillage!;
     }
     return village;
   }
 
-  String get displayTaluka {
-    if (marathiTaluka != null && marathiTaluka!.isNotEmpty) {
-      return '$taluka / $marathiTaluka';
+  String getDisplayTaluka(String lang) {
+    if (lang == 'mr' && marathiTaluka != null && marathiTaluka!.isNotEmpty) {
+      return marathiTaluka!;
     }
     return taluka;
   }
 
-  String get displayDistrict {
-    if (marathiDistrict != null && marathiDistrict!.isNotEmpty) {
-      return '$district / $marathiDistrict';
+  String getDisplayDistrict(String lang) {
+    if (lang == 'mr' && marathiDistrict != null && marathiDistrict!.isNotEmpty) {
+      return marathiDistrict!;
     }
     return district;
   }
 
-  String get displayState {
-    if (marathiState != null && marathiState!.isNotEmpty) {
-      return '$state / $marathiState';
+  String getDisplayState(String lang) {
+    if (lang == 'mr' && marathiState != null && marathiState!.isNotEmpty) {
+      return marathiState!;
     }
     return state;
   }
+
+  String get displayVillage => village;
+  String get displayTaluka => taluka;
+  String get displayDistrict => district;
+  String get displayState => state;
+
+
+
+
 
   factory VillageVisit.fromJson(Map<String, dynamic> json,
       [String? visitDate]) {

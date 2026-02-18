@@ -10,140 +10,13 @@ import 'package:mukadam_bi/seeplan/execution_service.dart';
 import 'package:mukadam_bi/seeplan/plan_service_model.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 import '../geo_tagging.dart';
+import '../language_jsons/execution_strings.dart';
+import '../provider/language_provider.dart';
+import 'official_display_names.dart';
 
-/// Helper class for bilingual display names (English + Marathi)
-class OfficialDisplayNames {
-  // Shopowner display names with Marathi
-  static String getShopownerDisplayName(String official) {
-    final match = RegExp(r'shopowner_(\d+)').firstMatch(official);
-    if (match != null) {
-      int num = int.tryParse(match.group(1) ?? '1') ?? 1;
-      bool isMandatory = official.contains('mandatory');
-      String suffix = isMandatory ? ' ⭐' : '';
-      return 'Shopowner $num / दुकानदार $num$suffix';
-    }
-    return 'Shopowner / दुकानदार';
-  }
-
-  // Hotspot display names with Marathi
-  static String getHotspotDisplayName(String official) {
-    switch (official) {
-      case 'hotspot_pickup_dropoff':
-        return 'Pickup/Dropoff Point / पिकअप/ड्रॉपऑफ ⭐';
-      case 'hotspot_banner_spot':
-        return 'Banner Spot / बॅनर स्पॉट ⭐';
-      case 'hotspot_wall_painting':
-        return 'Wall Painting / वॉल पेंटिंग ⭐';
-      default:
-        return 'Hotspot / हॉटस्पॉट';
-    }
-  }
-
-  // Government official display names with Marathi
-  static String getGovtOfficialDisplayName(String official) {
-    switch (official) {
-      case 'sarpanch':
-        return 'Sarpanch / सरपंच';
-      case 'secretary':
-        return 'Secretary / सचिव';
-      case 'talathi':
-        return 'Talathi / तलाठी';
-      case 'postman':
-        return 'Postman / पोस्टमन';
-      case 'vdo':
-        return 'VDO / ग्रामसेवक';
-      case 'principal':
-        return 'Principal / मुख्याध्यापक';
-      case 'agriculture_officer':
-        return 'Agri Officer / कृषी अधिकारी';
-      case 'anganwadi_worker':
-        return 'Anganwadi / अंगणवाडी सेविका';
-      case 'asha_worker':
-        return 'ASHA Worker / आशा वर्कर';
-      case 'police_patil':
-        return 'Police Patil / पोलीस पाटील';
-      case 'krishi_sahayak':
-        return 'Krishi Sahayak / कृषी सहायक';
-      case 'gram_panchayat_member':
-        return 'GP Member / ग्रा.पं. सदस्य';
-      default:
-        return official;
-    }
-  }
-
-  // Mukkadam display names with Marathi
-  static String getMukkadamDisplayName(String official) {
-    final match = RegExp(r'mukkadam_(\d+)').firstMatch(official);
-    if (match != null) {
-      int num = int.tryParse(match.group(1) ?? '1') ?? 1;
-      return 'Mukkadam $num / मुकादम $num';
-    }
-    return 'Mukkadam / मुकादम';
-  }
-
-  // Influential person display names with Marathi
-  static String getInfluentialPersonDisplayName(String official) {
-    final match = RegExp(r'influential_person_(\d+)').firstMatch(official);
-    if (match != null) {
-      int num = int.tryParse(match.group(1) ?? '1') ?? 1;
-      return 'Influential $num / प्रभावशाली $num';
-    }
-    return 'Influential / प्रभावशाली';
-  }
-
-  // Other person display names with Marathi
-  static String getOtherPersonDisplayName(String official) {
-    if (official == 'other') {
-      return 'Other / इतर व्यक्ती';
-    }
-    final match = RegExp(r'other_(\d+)').firstMatch(official);
-    if (match != null) {
-      int num = int.tryParse(match.group(1) ?? '1') ?? 1;
-      return 'Other $num / इतर $num';
-    }
-    return 'Other / इतर व्यक्ती';
-  }
-
-  // Village POC display name with Marathi
-  static String getVillagePocDisplayName() {
-    return 'Village POC / गाव संपर्क ⭐';
-  }
-
-  // Main method to get display name for any official
-  static String getDisplayName(String official) {
-    if (official.startsWith('shopowner_')) {
-      return getShopownerDisplayName(official);
-    } else if (official.startsWith('hotspot_')) {
-      return getHotspotDisplayName(official);
-    } else if (official.startsWith('mukkadam_')) {
-      return getMukkadamDisplayName(official);
-    } else if (official.startsWith('influential_person')) {
-      return getInfluentialPersonDisplayName(official);
-    } else if (official.startsWith('other_') || official == 'other') {
-      return getOtherPersonDisplayName(official);
-    } else if (official == 'village_poc') {
-      return getVillagePocDisplayName();
-    } else if (_isGovtOfficial(official)) {
-      return getGovtOfficialDisplayName(official);
-    }
-    return official
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((word) => word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : '')
-        .join(' ');
-  }
-
-  static bool _isGovtOfficial(String official) {
-    const govtOfficials = [
-      'sarpanch', 'secretary', 'talathi', 'postman', 'vdo',
-      'principal', 'agriculture_officer', 'anganwadi_worker',
-      'asha_worker', 'police_patil', 'krishi_sahayak', 'gram_panchayat_member',
-    ];
-    return govtOfficials.contains(official);
-  }
-}
 
 class VillageExecutionScreen extends StatefulWidget {
   final VillageVisit village;
@@ -158,12 +31,12 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     with SingleTickerProviderStateMixin {
   bool _isStarted = false;
   bool _isCompleted = false;
-  int todayMukkadamCount = 0; // <-- ADD THIS LINE
+  int todayMukkadamCount = 0;
 
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
   final GeoTaggingService _geoTaggingService = GeoTaggingService();
-  static const Color _primaryColor = Color(0xFF1E3A5F); // Match DailyPlansScreen
+  static const Color _primaryColor = Color(0xFF1E3A5F);
 
   final PlanService _planService = PlanService();
   final ExecutionService _executionService = ExecutionService();
@@ -181,7 +54,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
   final Map<String, TextEditingController> _customDesignationControllers = {};
   final Map<String, TextEditingController> _customLocationTypeControllers = {};
 
-  // Dropdown selections
+  // Dropdown selections (now store KEYS like 'chai_wala', not bilingual strings)
   final Map<String, String?> _selectedDesignations = {};
   final Map<String, String?> _selectedLocationTypes = {};
 
@@ -207,30 +80,19 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
 
   late TabController _tabController;
 
-  final List<String> _shopownerDesignations = [
-    'Chai Wala / चहावाला',
-    'Pan Wala / पानवाला',
-    'Kirana Store / किराणा',
-    'Medical Store / मेडिकल',
-    'Hardware Store / हार्डवेअर',
-    'Stationary Shop / स्टेशनरी',
-    'Mobile Shop / मोबाईल',
-    'Barber Shop / सलून',
-    'Tailor Shop / टेलर',
-    'Other / इतर',
+  // Language-aware getter
+  String get _lang => context.read<LanguageProvider>().language;
+
+  // Key-based dropdown lists (values sent to backend are always English via VillageExecutionStrings.get(key, 'en'))
+  final List<String> _shopownerDesignationKeys = [
+    'chai_wala', 'pan_wala', 'kirana_store', 'medical_store',
+    'hardware_store', 'stationary_shop', 'mobile_shop',
+    'barber_shop', 'tailor_shop', 'other',
   ];
 
-  final List<String> _pickupLocationTypes = [
-    'Bus Stand / बस स्टँड',
-    'Railway Station / रेल्वे',
-    'Market Area / बाजार',
-    'Main Chowk / मुख्य चौक',
-    'Temple / मंदिर',
-    'School / शाळा',
-    'Hospital / रुग्णालय',
-    'Post Office / पोस्ट ऑफिस',
-    'Panchayat / पंचायत',
-    'Other / इतर',
+  final List<String> _pickupLocationTypeKeys = [
+    'bus_stand', 'railway_station', 'market_area', 'main_chowk',
+    'temple', 'school', 'hospital', 'post_office', 'panchayat', 'other',
   ];
 
   final Map<String, String> _officialDesignationMap = {
@@ -267,7 +129,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       });
     }
   }
-
 
   Future<void> _checkExecutionStatus() async {
     final status = widget.village.status.toLowerCase();
@@ -332,8 +193,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     _villageFeedbackController.text = _executionData!.villageFeedback;
     _totalRegistrationsController.text = _executionData!.totalRegistrations.toString();
 
-    // Track how many of each plain type we've seen from backend
-    // so we can assign them to the correct internal keys in order
     Map<String, int> typeCounters = {
       'shopowner': 0,
       'mukkadam': 0,
@@ -343,8 +202,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
 
     for (var meeting in _executionData!.meetings) {
       String personType = meeting.personType;
-
-      // Try to find the matching internal key for this backend person_type
       String internalKey = _findInternalKeyForPersonType(personType, typeCounters);
 
       if (!_activeOfficials.contains(internalKey)) {
@@ -364,25 +221,25 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
         _feedbackControllers[internalKey]?.text = meeting.meetingNotes ?? '';
 
         if (_isShopowner(internalKey)) {
-          String? matchedDesignation = _findMatchingDesignation(
+          String? matchedKey = _findMatchingDesignationKey(
             meeting.personDesignation,
-            _shopownerDesignations,
+            _shopownerDesignationKeys,
           );
-          if (matchedDesignation != null) {
-            _selectedDesignations[internalKey] = matchedDesignation;
+          if (matchedKey != null) {
+            _selectedDesignations[internalKey] = matchedKey;
           } else {
-            _selectedDesignations[internalKey] = 'Other / इतर';
+            _selectedDesignations[internalKey] = 'other';
             _customDesignationControllers[internalKey]?.text = meeting.personDesignation;
           }
         } else if (_isHotspot(internalKey)) {
-          String? matchedLocation = _findMatchingDesignation(
+          String? matchedKey = _findMatchingDesignationKey(
             meeting.personDesignation,
-            _pickupLocationTypes,
+            _pickupLocationTypeKeys,
           );
-          if (matchedLocation != null) {
-            _selectedLocationTypes[internalKey] = matchedLocation;
+          if (matchedKey != null) {
+            _selectedLocationTypes[internalKey] = matchedKey;
           } else {
-            _selectedLocationTypes[internalKey] = 'Other / इतर';
+            _selectedLocationTypes[internalKey] = 'other';
             _customLocationTypeControllers[internalKey]?.text = meeting.personDesignation;
           }
         }
@@ -410,33 +267,23 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     }
   }
 
-  /// Maps a backend person_type (e.g. "shopowner") back to the correct
-  /// internal key (e.g. "shopowner_1_mandatory", "shopowner_2_mandatory", "shopowner_3_optional")
   String _findInternalKeyForPersonType(String backendType, Map<String, int> typeCounters) {
-    // Government officials and hotspots — backend type IS the internal key
     if (_isGovernmentOfficial(backendType) || backendType.startsWith('hotspot_') || backendType == 'village_poc') {
       return backendType;
     }
 
-    // For shopowner, mukkadam, influential_person, other —
-    // find the Nth unsubmitted internal key of that type
-    String baseType = backendType; // e.g. "shopowner", "mukkadam", etc.
-
-    // Get all internal keys that map to this backend type, in order
+    String baseType = backendType;
     List<String> matchingKeys = _activeOfficials.where((key) {
       return _getValidPersonType(key) == baseType;
     }).toList();
 
-    // Get current counter for this type
     int currentIndex = typeCounters[baseType] ?? 0;
 
     if (currentIndex < matchingKeys.length) {
-      // Assign to existing internal key
       typeCounters[baseType] = currentIndex + 1;
       return matchingKeys[currentIndex];
     }
 
-    // No more pre-existing keys — create a new dynamic one
     typeCounters[baseType] = currentIndex + 1;
     String newKey;
     if (baseType == 'shopowner') {
@@ -452,15 +299,11 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       newKey = 'other_$_nextOtherPersonNumber';
       _nextOtherPersonNumber++;
     } else {
-      newKey = backendType; // fallback
+      newKey = backendType;
     }
     return newKey;
   }
 
-
-
-
-  /// Update the next counter numbers when loading existing data
   void _updateNextNumbersFromOfficial(String official) {
     if (_isShopowner(official)) {
       final match = RegExp(r'shopowner_(\d+)').firstMatch(official);
@@ -497,22 +340,18 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     }
   }
 
-  String? _findMatchingDesignation(String value, List<String> options) {
-    if (options.contains(value)) return value;
-    for (var option in options) {
-      String englishPart = option.split(' / ').first.trim();
-      if (englishPart.toLowerCase() == value.toLowerCase()) {
-        return option;
+  /// Matches a backend designation value to a key in the given list
+  String? _findMatchingDesignationKey(String backendValue, List<String> keys) {
+    // Direct key match
+    if (keys.contains(backendValue.toLowerCase())) return backendValue.toLowerCase();
+    // Match by English display value from strings map
+    for (var key in keys) {
+      String english = VillageExecutionStrings.get(key, 'en');
+      if (english.toLowerCase() == backendValue.toLowerCase()) {
+        return key;
       }
     }
     return null;
-  }
-
-  String _extractEnglishPart(String bilingualText) {
-    if (bilingualText.contains(' / ')) {
-      return bilingualText.split(' / ').first.trim();
-    }
-    return bilingualText;
   }
 
   void _initializeOfficials() {
@@ -601,24 +440,20 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     return official.startsWith('influential_person');
   }
 
-  // ===== DYNAMIC ADD LOGIC: Check if last entry of a type is submitted =====
   bool _canAddMoreOfType(String type) {
     if (_isCompleted) return false;
 
     if (type == 'shopowner') {
-      // Get ALL shopowner entries (mandatory + optional) sorted by number
       List<String> allShopowners = _activeOfficials
           .where((o) => _isShopowner(o))
           .toList();
       if (allShopowners.isEmpty) return true;
-      // The last shopowner in the list must be submitted to add a new one
       String lastShopowner = allShopowners.last;
       return _isOfficialSubmitted[lastShopowner] == true;
     } else if (type == 'mukkadam') {
       List<String> allMukkadams = _activeOfficials
           .where((o) => _isMukkadam(o))
           .toList();
-      // If none exist yet, allow adding the first one freely
       if (allMukkadams.isEmpty) return true;
       String lastMukkadam = allMukkadams.last;
       return _isOfficialSubmitted[lastMukkadam] == true;
@@ -641,18 +476,17 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     return false;
   }
 
-  // ===== DYNAMIC ADD: No max limit, uses _canAddMoreOfType check =====
   void _addOptionalOfficial(String type) {
     if (!_canAddMoreOfType(type)) {
       String typeLabel = type == 'shopowner'
-          ? 'Shopowner / दुकानदार'
+          ? VillageExecutionStrings.get('shopowner', _lang)
           : type == 'mukkadam'
-          ? 'Mukkadam / मुकादम'
+          ? VillageExecutionStrings.get('mukkadam', _lang)
           : type == 'influential_person'
-          ? 'Influential / प्रभावशाली'
-          : 'Other / इतर';
+          ? VillageExecutionStrings.get('influential', _lang)
+          : VillageExecutionStrings.get('other', _lang);
       _showSnackBar(
-        "Submit previous $typeLabel first / आधी मागील $typeLabel सबमिट करा",
+        "${VillageExecutionStrings.get('submit_previous_first', _lang)} $typeLabel ${VillageExecutionStrings.get('first_suffix', _lang)}",
         isError: true,
       );
       return;
@@ -684,7 +518,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
 
   void _removeOptionalOfficial(String official) {
     if (_isOfficialSubmitted[official] == true) {
-      _showSnackBar("Cannot remove submitted / सबमिट केलेले काढता येत नाही", isError: true);
+      _showSnackBar(VillageExecutionStrings.get('cannot_remove_submitted', _lang), isError: true);
       return;
     }
 
@@ -763,7 +597,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     return govtOfficials.contains(official);
   }
 
-  // ===== Phone number validation helper =====
   bool _isValidPhoneNumber(String phone) {
     if (phone.isEmpty) return false;
     final digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
@@ -791,16 +624,16 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       bool? shouldOpenSettings = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("Location Disabled / लोकेशन बंद"),
-          content: const Text("Please enable location services.\nकृपया लोकेशन सुरू करा."),
+          title: Text(VillageExecutionStrings.get('location_disabled', _lang)),
+          content: Text(VillageExecutionStrings.get('enable_location', _lang)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel"),
+              child: Text(VillageExecutionStrings.get('cancel', _lang)),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text("Settings"),
+              child: Text(VillageExecutionStrings.get('settings', _lang)),
             ),
           ],
         ),
@@ -816,7 +649,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        _showSnackBar("Location denied / परवानगी नाकारली", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('location_denied', _lang), isError: true);
         return false;
       }
     }
@@ -825,16 +658,16 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       bool? shouldOpenSettings = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("Permission Required / परवानगी आवश्यक"),
-          content: const Text("Please enable location from settings.\nसेटिंग्जमधून लोकेशन सुरू करा."),
+          title: Text(VillageExecutionStrings.get('permission_required', _lang)),
+          content: Text(VillageExecutionStrings.get('enable_location_settings', _lang)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel"),
+              child: Text(VillageExecutionStrings.get('cancel', _lang)),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text("Settings"),
+              child: Text(VillageExecutionStrings.get('settings', _lang)),
             ),
           ],
         ),
@@ -880,10 +713,10 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               child: Icon(Icons.play_arrow, color: Colors.green.shade700),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                "Start / सुरू करा",
-                style: TextStyle(fontSize: 16),
+                VillageExecutionStrings.get('start', _lang),
+                style: const TextStyle(fontSize: 16),
               ),
             ),
           ],
@@ -893,13 +726,8 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Start visit for ${widget.village.village}?",
+              "${VillageExecutionStrings.get('start_visit_question', _lang)} ${widget.village.village}?",
               style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "${widget.village.village} ला भेट सुरू करायची?",
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
             ),
             const SizedBox(height: 12),
             Container(
@@ -912,10 +740,10 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                 children: [
                   Icon(Icons.location_on, color: Colors.blue.shade700, size: 20),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      "GPS will be captured\nGPS घेतले जाईल",
-                      style: TextStyle(fontSize: 12),
+                      VillageExecutionStrings.get('gps_will_be_captured', _lang),
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ],
@@ -926,7 +754,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(VillageExecutionStrings.get('cancel', _lang)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -937,7 +765,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
-            child: const Text("Start"),
+            child: Text(VillageExecutionStrings.get('start', _lang)),
           ),
         ],
       ),
@@ -960,7 +788,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       );
 
       if (result != null) {
-        _showSnackBar("Started! / सुरू झाली!");
+        _showSnackBar(VillageExecutionStrings.get('started', _lang));
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             Navigator.pop(context, true);
@@ -976,7 +804,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     }
   }
 
-  // ===== CHANGE 2: Camera only + GeoTagging preserved =====
   Future<void> _handleImageCapture(String official) async {
     setState(() => _isFetchingLocation[official] = true);
 
@@ -984,14 +811,14 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       bool permissionsGranted = await _geoTaggingService.checkAllPermissions(context);
       if (!permissionsGranted) {
         setState(() => _isFetchingLocation[official] = false);
-        _showSnackBar("Permissions required / परवानग्या आवश्यक", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('permissions_required', _lang), isError: true);
         return;
       }
 
       Position? position = await _geoTaggingService.getCurrentPosition();
       if (position == null) {
         setState(() => _isFetchingLocation[official] = false);
-        _showSnackBar("Could not get GPS / GPS मिळाले नाही", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('could_not_get_gps', _lang), isError: true);
         return;
       }
 
@@ -1010,13 +837,14 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
         _locations[official] = _geoTaggingService.formatCoordinates(position);
         _isFetchingLocation[official] = false;
       });
-      _showSnackBar("Captured! / फोटो घेतला!");
+      _showSnackBar(VillageExecutionStrings.get('photo_captured', _lang));
     } catch (e) {
       setState(() => _isFetchingLocation[official] = false);
       _showSnackBar("Error: $e", isError: true);
     }
   }
 
+  /// Always returns English designation for backend
   String _getFinalDesignation(String official) {
     if (_isGovernmentOfficial(official)) {
       return _designationControllers[official]?.text.trim() ?? '';
@@ -1025,15 +853,17 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       return _designationControllers[official]?.text.trim() ?? '';
     }
     if (_isShopowner(official)) {
-      if (_selectedDesignations[official] == 'Other / इतर') {
+      String? selectedKey = _selectedDesignations[official];
+      if (selectedKey == 'other') {
         return _customDesignationControllers[official]?.text.trim() ?? '';
       }
-      return _extractEnglishPart(_selectedDesignations[official] ?? '');
+      return VillageExecutionStrings.get(selectedKey ?? '', 'en');
     } else if (_isHotspot(official)) {
-      if (_selectedLocationTypes[official] == 'Other / इतर') {
+      String? selectedKey = _selectedLocationTypes[official];
+      if (selectedKey == 'other') {
         return _customLocationTypeControllers[official]?.text.trim() ?? '';
       }
-      return _extractEnglishPart(_selectedLocationTypes[official] ?? '');
+      return VillageExecutionStrings.get(selectedKey ?? '', 'en');
     } else {
       return _designationControllers[official]?.text.trim() ?? '';
     }
@@ -1042,7 +872,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
   String _getValidPersonType(String official) {
     String personType = official.toLowerCase();
 
-    // Strip numbers and suffixes for backend - it expects plain types
     if (personType.startsWith('other_') || personType == 'other') {
       return 'other';
     }
@@ -1056,15 +885,12 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       return 'shopowner';
     }
     if (personType.startsWith('hotspot_')) {
-      return personType; // hotspot types stay as-is (hotspot_pickup_dropoff, etc.)
+      return personType;
     }
 
-    // Government officials stay as-is (sarpanch, secretary, etc.)
     return personType;
   }
 
-
-  // ===== CHANGE 1: Phone validation mandatory for ALL =====
   Future<void> _submitOfficialData(String official) async {
     bool isGovtOfficial = _isGovernmentOfficial(official);
     bool isMukkadamOfficial = _isMukkadam(official);
@@ -1073,61 +899,61 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
 
     if (_personMetStatus[official]!) {
       if (_capturedPositions[official] == null) {
-        _showSnackBar("Capture GPS / GPS घ्या", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('capture_gps', _lang), isError: true);
         return;
       }
 
       if (isHotspotOfficial) {
         String locationType = _getFinalDesignation(official);
         if (locationType.isEmpty) {
-          _showSnackBar("Select location / लोकेशन निवडा", isError: true);
+          _showSnackBar(VillageExecutionStrings.get('select_location', _lang), isError: true);
           return;
         }
       } else if (isShopownerOfficial) {
         String designation = _getFinalDesignation(official);
         if (designation.isEmpty) {
-          _showSnackBar("Select shop type / दुकान निवडा", isError: true);
+          _showSnackBar(VillageExecutionStrings.get('select_shop_type', _lang), isError: true);
           return;
         }
         if (_nameControllers[official]!.text.trim().isEmpty) {
-          _showSnackBar("Enter name / नाव टाका", isError: true);
+          _showSnackBar(VillageExecutionStrings.get('enter_name', _lang), isError: true);
           return;
         }
       } else if (isGovtOfficial) {
         if (_nameControllers[official]!.text.trim().isEmpty) {
-          _showSnackBar("Enter name / नाव टाका", isError: true);
+          _showSnackBar(VillageExecutionStrings.get('enter_name', _lang), isError: true);
           return;
         }
       } else if (isMukkadamOfficial) {
         if (_nameControllers[official]!.text.trim().isEmpty) {
-          _showSnackBar("Enter name / नाव टाका", isError: true);
+          _showSnackBar(VillageExecutionStrings.get('enter_name', _lang), isError: true);
           return;
         }
       } else {
         if (_nameControllers[official]!.text.trim().isEmpty) {
-          _showSnackBar("Enter name / नाव टाका", isError: true);
+          _showSnackBar(VillageExecutionStrings.get('enter_name', _lang), isError: true);
           return;
         }
       }
 
       String phone = _phoneControllers[official]!.text.trim();
       if (phone.isEmpty) {
-        _showSnackBar("Enter phone number / फोन नंबर टाका", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('enter_phone', _lang), isError: true);
         return;
       }
       if (!_isValidPhoneNumber(phone)) {
-        _showSnackBar("Enter valid 10-digit phone / 10 अंकी फोन नंबर टाका", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('enter_valid_phone', _lang), isError: true);
         return;
       }
     } else {
       if (_reasonNotMetControllers[official]!.text.trim().isEmpty) {
-        _showSnackBar("Enter reason / कारण टाका", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('enter_reason', _lang), isError: true);
         return;
       }
 
       String designation = _designationControllers[official]?.text.trim() ?? '';
       if (designation.isEmpty) {
-        _showSnackBar("Enter designation / पदनाम टाका", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('enter_designation', _lang), isError: true);
         return;
       }
     }
@@ -1170,7 +996,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
         _isExpanded[official] = false;
       });
 
-      _showSnackBar("Submitted! / सबमिट झाले!");
+      _showSnackBar(VillageExecutionStrings.get('submitted_msg', _lang));
     } catch (e) {
       _showSnackBar("Error: $e", isError: true);
     } finally {
@@ -1240,10 +1066,10 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               child: Icon(Icons.check_circle, color: Colors.green.shade700),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                "Complete / पूर्ण करा",
-                style: TextStyle(fontSize: 16),
+                VillageExecutionStrings.get('complete', _lang),
+                style: const TextStyle(fontSize: 16),
               ),
             ),
           ],
@@ -1258,7 +1084,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                   controller: _totalRegistrationsController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "Registrations / नोंदणी",
+                    labelText: VillageExecutionStrings.get('registrations', _lang),
                     prefixIcon: const Icon(Icons.people),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1270,8 +1096,8 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                   controller: _villageFeedbackController,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    labelText: "Feedback / अभिप्राय",
-                    hintText: "Enter feedback / अभिप्राय टाका",
+                    labelText: VillageExecutionStrings.get('feedback', _lang),
+                    hintText: VillageExecutionStrings.get('enter_feedback', _lang),
                     prefixIcon: const Icon(Icons.feedback),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1291,10 +1117,10 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                     children: [
                       Icon(Icons.location_on, color: Colors.blue.shade700, size: 20),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          "GPS will be captured on submit\nGPS सबमिट वर घेतले जाईल",
-                          style: TextStyle(fontSize: 11),
+                          VillageExecutionStrings.get('gps_on_submit', _lang),
+                          style: const TextStyle(fontSize: 11),
                         ),
                       ),
                     ],
@@ -1307,7 +1133,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(VillageExecutionStrings.get('cancel', _lang)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1318,14 +1144,13 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
-            child: const Text("Complete"),
+            child: Text(VillageExecutionStrings.get('complete', _lang)),
           ),
         ],
       ),
     );
   }
 
-  // ===== CHANGE 3: Improved unfilled details dialog UI =====
   void _showUnfilledDetailsDialog(List<String> unfilledOfficials) {
     showDialog(
       context: context,
@@ -1352,20 +1177,12 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                 children: [
                   const Icon(Icons.assignment_late_rounded, color: Colors.white, size: 40),
                   const SizedBox(height: 8),
-                  const Text(
-                    "Incomplete Form",
-                    style: TextStyle(
+                  Text(
+                    VillageExecutionStrings.get('incomplete_form', _lang),
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "अपूर्ण फॉर्म",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                 ],
@@ -1401,7 +1218,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        "items need to be filled\nआयटम भरणे आवश्यक",
+                        VillageExecutionStrings.get('items_need_filled', _lang),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.red.shade700,
@@ -1483,9 +1300,9 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    "Go Back & Fill / परत जा आणि भरा",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  child: Text(
+                    VillageExecutionStrings.get('go_back_fill', _lang),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -1513,7 +1330,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       }
 
       if (_villageFeedbackController.text.trim().isEmpty) {
-        _showSnackBar("Please enter feedback / कृपया अभिप्राय टाका", isError: true);
+        _showSnackBar(VillageExecutionStrings.get('enter_feedback_msg', _lang), isError: true);
         setState(() => _isLoading = false);
         return;
       }
@@ -1530,7 +1347,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
         setState(() {
           _isCompleted = true;
         });
-        _showSnackBar("Completed! / पूर्ण झाले!");
+        _showSnackBar(VillageExecutionStrings.get('completed_msg', _lang));
 
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) Navigator.pop(context, true);
@@ -1558,7 +1375,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
   }
 
   String _formatOfficialTitle(String official) {
-    return OfficialDisplayNames.getDisplayName(official);
+    return OfficialDisplayNames.getDisplayName(official, _lang);
   }
 
   Color _getStatusColor(String status) {
@@ -1596,15 +1413,22 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     return Icons.person;
   }
 
-  // ===== CHANGE 4: Simple AppBar =====
+  // ======================== BUILD ========================
   @override
   Widget build(BuildContext context) {
     final statusColor = _getStatusColor(widget.village.status);
+    // Watch provider to trigger rebuild on language change
+    context.watch<LanguageProvider>();
+
+    final villageName = widget.village.getDisplayVillage(_lang);
+    final talukaName = widget.village.getDisplayTaluka(_lang);
+    final districtName = widget.village.getDisplayDistrict(_lang);
+
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor:_primaryColor,
+        backgroundColor: _primaryColor,
         foregroundColor: Colors.white,
         elevation: 2,
         leading: IconButton(
@@ -1615,7 +1439,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.village.village,
+              villageName,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -1625,7 +1449,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               overflow: TextOverflow.ellipsis,
             ),
             Text(
-              '${widget.village.taluka}, ${widget.village.district}',
+              '$talukaName, $districtName',
               style: const TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ],
@@ -1664,7 +1488,9 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
             ),
             const SizedBox(height: 24),
             Text(
-              canStart ? "Ready? / तयार?" : "Not Available / उपलब्ध नाही",
+              canStart
+                  ? VillageExecutionStrings.get('ready', _lang)
+                  : VillageExecutionStrings.get('not_available', _lang),
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -1674,8 +1500,8 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
             const SizedBox(height: 12),
             Text(
               canStart
-                  ? "Start visit to ${widget.village.village}"
-                  : "Planned for $formattedDate",
+                  ? "${VillageExecutionStrings.get('start_visit_to', _lang)} ${widget.village.village}"
+                  : "${VillageExecutionStrings.get('planned_for', _lang)} $formattedDate",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade600,
@@ -1692,7 +1518,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                   border: Border.all(color: Colors.orange.shade200),
                 ),
                 child: Text(
-                  "Start on planned date / नियोजित तारखेला सुरू करा",
+                  VillageExecutionStrings.get('start_on_planned_date', _lang),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.orange.shade700,
@@ -1705,7 +1531,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
             ElevatedButton.icon(
               onPressed: canStart ? _showStartDialog : null,
               icon: const Icon(Icons.play_arrow),
-              label: const Text("Start / सुरू करा"),
+              label: Text(VillageExecutionStrings.get('start', _lang)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: canStart ? Colors.green : Colors.grey.shade400,
                 foregroundColor: Colors.white,
@@ -1735,7 +1561,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
   }
 
   Widget _buildProgressCard() {
-    // Only count officials from Shops & Spots (mandatory) and Officials (govt) tabs
     List<String> trackableOfficials = _activeOfficials
         .where((o) => _isOfficialMandatory(o) || _isGovernmentOfficial(o))
         .toList();
@@ -1765,11 +1590,10 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem(Icons.people, '${widget.village.expectedRegistrations}', 'Expected', Colors.blue),
-              _buildStatItem(Icons.engineering, '$todayMukkadamCount', 'Mukkadams\n(Today)', Colors.deepPurple), // <-- ADD ONLY THIS LINE
-              _buildStatItem(Icons.check_circle, '$submittedCount/$totalOfficials', 'Officials', Colors.green),
-              _buildStatItem(Icons.trending_up, '${(progress * 100).toInt()}%', 'Progress', Colors.orange),
-
+              _buildStatItem(Icons.people, '${widget.village.expectedRegistrations}', VillageExecutionStrings.get('expected', _lang), Colors.blue),
+              _buildStatItem(Icons.engineering, '$todayMukkadamCount', VillageExecutionStrings.get('mukkadams_today', _lang), Colors.deepPurple),
+              _buildStatItem(Icons.check_circle, '$submittedCount/$totalOfficials', VillageExecutionStrings.get('officials', _lang), Colors.green),
+              _buildStatItem(Icons.trending_up, '${(progress * 100).toInt()}%', VillageExecutionStrings.get('progress', _lang), Colors.orange),
             ],
           ),
           const SizedBox(height: 12),
@@ -1788,7 +1612,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
       ),
     );
   }
-
 
   Widget _buildStatItem(IconData icon, String value, String label, Color color) {
     return Column(
@@ -1826,10 +1649,10 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
         labelColor: Colors.indigo,
         unselectedLabelColor: Colors.grey.shade600,
         labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
-        tabs: const [
-          Tab(text: 'Shops & Spots\nदुकान व स्पॉट'),
-          Tab(text: 'Officials\nअधिकारी'),
-          Tab(text: 'Others\nइतर'),
+        tabs: [
+          Tab(text: VillageExecutionStrings.get('tab_shops_spots', _lang)),
+          Tab(text: VillageExecutionStrings.get('tab_officials', _lang)),
+          Tab(text: VillageExecutionStrings.get('tab_others', _lang)),
         ],
       ),
     );
@@ -1862,7 +1685,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
           child: officials.isEmpty
               ? Center(
             child: Text(
-              'No officials / कोणी नाही',
+              VillageExecutionStrings.get('no_officials', _lang),
               style: TextStyle(color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
@@ -1883,7 +1706,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               child: ElevatedButton.icon(
                 onPressed: _showCompleteDialog,
                 icon: const Icon(Icons.done_all),
-                label: const Text("Complete Visit / भेट पूर्ण करा"),
+                label: Text(VillageExecutionStrings.get('complete_visit', _lang)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -1897,7 +1720,6 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     );
   }
 
-  // ===== UPDATED: _buildOthersTab now uses _canAddMoreOfType for dynamic add =====
   Widget _buildOthersTab(List<String> others) {
     List<String> shopowners = others.where((o) => _isShopowner(o)).toList();
     List<String> influentials = others.where((o) => _isInfluentialPerson(o)).toList();
@@ -1913,26 +1735,26 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildCategorySection(
-                  title: 'Shopowners / दुकानदार', officials: shopowners,
-                  addButtonText: 'Add Shop / दुकान +', onAdd: () => _addOptionalOfficial('shopowner'),
+                  title: VillageExecutionStrings.get('shopowners', _lang), officials: shopowners,
+                  addButtonText: VillageExecutionStrings.get('add_shop', _lang), onAdd: () => _addOptionalOfficial('shopowner'),
                   canAdd: _canAddMoreOfType('shopowner'), icon: Icons.store, color: Colors.blue,
                 ),
                 const SizedBox(height: 16),
                 _buildCategorySection(
-                  title: 'Influential Persons / प्रभावशाली', officials: influentials,
-                  addButtonText: 'Add Influential / प्रभावशाली +', onAdd: () => _addOptionalOfficial('influential_person'),
+                  title: VillageExecutionStrings.get('influential_persons', _lang), officials: influentials,
+                  addButtonText: VillageExecutionStrings.get('add_influential', _lang), onAdd: () => _addOptionalOfficial('influential_person'),
                   canAdd: _canAddMoreOfType('influential_person'), icon: Icons.star, color: Colors.purple,
                 ),
                 const SizedBox(height: 16),
                 _buildCategorySection(
-                  title: 'Mukkadams / मुकादम', officials: mukkadams,
-                  addButtonText: 'Add Mukkadam / मुकादम +', onAdd: () => _addOptionalOfficial('mukkadam'),
+                  title: VillageExecutionStrings.get('mukkadams', _lang), officials: mukkadams,
+                  addButtonText: VillageExecutionStrings.get('add_mukkadam', _lang), onAdd: () => _addOptionalOfficial('mukkadam'),
                   canAdd: _canAddMoreOfType('mukkadam'), icon: Icons.engineering, color: Colors.orange,
                 ),
                 const SizedBox(height: 16),
                 _buildCategorySection(
-                  title: 'Other Persons / इतर व्यक्ती', officials: otherPersons,
-                  addButtonText: 'Add Other / इतर +', onAdd: () => _addOptionalOfficial('other'),
+                  title: VillageExecutionStrings.get('other_persons', _lang), officials: otherPersons,
+                  addButtonText: VillageExecutionStrings.get('add_other', _lang), onAdd: () => _addOptionalOfficial('other'),
                   canAdd: _canAddMoreOfType('other'), icon: Icons.person_add, color: Colors.teal,
                 ),
               ],
@@ -1947,7 +1769,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               child: ElevatedButton.icon(
                 onPressed: _showCompleteDialog,
                 icon: const Icon(Icons.done_all),
-                label: const Text("Complete Visit / भेट पूर्ण करा"),
+                label: Text(VillageExecutionStrings.get('complete_visit', _lang)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -2017,7 +1839,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
               padding: const EdgeInsets.all(16),
               child: Center(
                 child: Text(
-                  'None added / काहीही नाही',
+                  VillageExecutionStrings.get('none_added', _lang),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic),
                 ),
               ),
@@ -2082,20 +1904,20 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                   children: [
                     const Icon(Icons.check_circle, color: Colors.green, size: 14),
                     const SizedBox(width: 4),
-                    const Flexible(
-                      child: Text("Submitted / सबमिट", style: TextStyle(color: Colors.green, fontSize: 10), overflow: TextOverflow.ellipsis),
+                    Flexible(
+                      child: Text(VillageExecutionStrings.get('submitted', _lang), style: const TextStyle(color: Colors.green, fontSize: 10), overflow: TextOverflow.ellipsis),
                     ),
                   ],
                 ),
                 Text(
-                  "Tap to view / पाहण्यासाठी टॅप करा",
+                  VillageExecutionStrings.get('tap_to_view', _lang),
                   style: TextStyle(fontSize: 9, color: Colors.grey.shade500, fontStyle: FontStyle.italic),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             )
                 : Text(
-              _locations[official] ?? "Not captured",
+              _locations[official] ?? VillageExecutionStrings.get('not_captured', _lang),
               style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
               overflow: TextOverflow.ellipsis,
             ),
@@ -2142,7 +1964,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              "View Only / केवळ पाहण्यासाठी",
+                              VillageExecutionStrings.get('view_only', _lang),
                               style: TextStyle(fontSize: 10, color: Colors.blue.shade700, fontWeight: FontWeight.w500),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -2155,7 +1977,7 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Flexible(child: Text("Met? / भेटला?", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+                      Flexible(child: Text(VillageExecutionStrings.get('met', _lang), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
                       Switch(
                         value: isMet,
                         onChanged: isSubmitted
@@ -2173,11 +1995,11 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
 
                   // FIELDS FOR PERSON MET
                   if (isMet) ...[
-                    _buildTextField("Name / नाव ${isSubmitted ? '' : '*'}", _nameControllers[official]!, isSubmitted),
+                    _buildTextField("${VillageExecutionStrings.get('name', _lang)} ${isSubmitted ? '' : '*'}", _nameControllers[official]!, isSubmitted),
                     const SizedBox(height: 12),
 
                     _buildTextField(
-                      "Phone / फोन ${isSubmitted ? '' : '*'}",
+                      "${VillageExecutionStrings.get('phone', _lang)} ${isSubmitted ? '' : '*'}",
                       _phoneControllers[official]!,
                       isSubmitted,
                       keyboardType: TextInputType.phone,
@@ -2187,47 +2009,47 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                     const SizedBox(height: 12),
 
                     if (isGovtOfficial) ...[
-                      _buildTextField("Designation / पदनाम", _designationControllers[official]!, true),
+                      _buildTextField(VillageExecutionStrings.get('designation', _lang), _designationControllers[official]!, true),
                       const SizedBox(height: 12),
                     ] else if (isMukkadamOfficial) ...[
-                      _buildTextField("Designation / पदनाम", _designationControllers[official]!, true),
+                      _buildTextField(VillageExecutionStrings.get('designation', _lang), _designationControllers[official]!, true),
                       const SizedBox(height: 12),
                     ] else if (isShopowner) ...[
                       if (isSubmitted) ...[
-                        _buildTextField("Shop Type / दुकान", TextEditingController(text: _getFinalDesignation(official)), true),
+                        _buildTextField(VillageExecutionStrings.get('shop_type', _lang), TextEditingController(text: _getFinalDesignation(official)), true),
                       ] else ...[
                         _buildDropdownField(
-                          "Shop Type / दुकान *",
-                          _shopownerDesignations,
+                          "${VillageExecutionStrings.get('shop_type', _lang)} *",
+                          _shopownerDesignationKeys,
                           _selectedDesignations[official],
                               (value) { setState(() { _selectedDesignations[official] = value; }); },
                         ),
                         const SizedBox(height: 12),
-                        if (_selectedDesignations[official] == 'Other / इतर')
-                          _buildTextField("Custom / इतर *", _customDesignationControllers[official]!, isSubmitted),
+                        if (_selectedDesignations[official] == 'other')
+                          _buildTextField("${VillageExecutionStrings.get('custom', _lang)} *", _customDesignationControllers[official]!, isSubmitted),
                       ],
                       const SizedBox(height: 12),
                     ] else if (isHotspot) ...[
                       if (isSubmitted) ...[
-                        _buildTextField("Location / लोकेशन", TextEditingController(text: _getFinalDesignation(official)), true),
+                        _buildTextField(VillageExecutionStrings.get('location_type', _lang), TextEditingController(text: _getFinalDesignation(official)), true),
                       ] else ...[
                         _buildDropdownField(
-                          "Location / लोकेशन *",
-                          _pickupLocationTypes,
+                          "${VillageExecutionStrings.get('location_type', _lang)} *",
+                          _pickupLocationTypeKeys,
                           _selectedLocationTypes[official],
                               (value) { setState(() { _selectedLocationTypes[official] = value; }); },
                         ),
                         const SizedBox(height: 12),
-                        if (_selectedLocationTypes[official] == 'Other / इतर')
-                          _buildTextField("Custom / इतर *", _customLocationTypeControllers[official]!, isSubmitted),
+                        if (_selectedLocationTypes[official] == 'other')
+                          _buildTextField("${VillageExecutionStrings.get('custom', _lang)} *", _customLocationTypeControllers[official]!, isSubmitted),
                       ],
                       const SizedBox(height: 12),
                     ] else ...[
-                      _buildTextField("Designation / पदनाम", _designationControllers[official]!, isSubmitted),
+                      _buildTextField(VillageExecutionStrings.get('designation', _lang), _designationControllers[official]!, isSubmitted),
                       const SizedBox(height: 12),
                     ],
 
-                    _buildTextField("Notes / नोट्स", _feedbackControllers[official]!, isSubmitted, maxLines: 3),
+                    _buildTextField(VillageExecutionStrings.get('notes', _lang), _feedbackControllers[official]!, isSubmitted, maxLines: 3),
                     const SizedBox(height: 16),
 
                     if (isSubmitted && _locations[official] != null && _locations[official] != "Not captured") ...[
@@ -2270,8 +2092,8 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                             isFetchingLoc
                                 ? "GPS..."
                                 : _selectedImages[official] != null
-                                ? "Captured ✓"
-                                : "Capture * / फोटो *",
+                                ? VillageExecutionStrings.get('captured', _lang)
+                                : VillageExecutionStrings.get('capture_photo', _lang),
                             style: const TextStyle(fontSize: 12),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -2299,12 +2121,12 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
 
                   if (!isMet) ...[
                     if (isGovtOfficial || isMukkadamOfficial) ...[
-                      _buildTextField("Designation / पदनाम", _designationControllers[official]!, true),
+                      _buildTextField(VillageExecutionStrings.get('designation', _lang), _designationControllers[official]!, true),
                     ] else ...[
-                      _buildTextField("Designation / पदनाम ${isSubmitted ? '' : '*'}", _designationControllers[official]!, isSubmitted),
+                      _buildTextField("${VillageExecutionStrings.get('designation', _lang)} ${isSubmitted ? '' : '*'}", _designationControllers[official]!, isSubmitted),
                     ],
                     const SizedBox(height: 12),
-                    _buildTextField("Reason / कारण ${isSubmitted ? '' : '*'}", _reasonNotMetControllers[official]!, isSubmitted, maxLines: 3),
+                    _buildTextField("${VillageExecutionStrings.get('reason', _lang)} ${isSubmitted ? '' : '*'}", _reasonNotMetControllers[official]!, isSubmitted, maxLines: 3),
                   ],
 
                   const SizedBox(height: 16),
@@ -2319,7 +2141,9 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
                               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                               : const Icon(Icons.save, size: 18),
                           label: Text(
-                            _isSubmitting[official] == true ? 'Saving...' : 'Submit',
+                            _isSubmitting[official] == true
+                                ? VillageExecutionStrings.get('saving', _lang)
+                                : VillageExecutionStrings.get('submit', _lang),
                             style: const TextStyle(fontSize: 12),
                           ),
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
@@ -2363,23 +2187,24 @@ class _VillageExecutionScreenState extends State<VillageExecutionScreen>
     );
   }
 
+  /// Language-aware dropdown: stores keys, displays localized text
   Widget _buildDropdownField(
       String label,
-      List<String> items,
-      String? selectedValue,
+      List<String> keys,
+      String? selectedKey,
       void Function(String?)? onChanged,
       ) {
     return DropdownButtonFormField<String>(
-      value: selectedValue,
+      value: selectedKey,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 11),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
-      items: items.map((item) => DropdownMenuItem(
-        value: item,
-        child: Text(item, style: const TextStyle(fontSize: 12)),
+      items: keys.map((key) => DropdownMenuItem(
+        value: key,
+        child: Text(VillageExecutionStrings.get(key, _lang), style: const TextStyle(fontSize: 12)),
       )).toList(),
       onChanged: onChanged,
       isExpanded: true,

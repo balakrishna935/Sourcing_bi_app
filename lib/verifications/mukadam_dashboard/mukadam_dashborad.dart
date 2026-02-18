@@ -1,6 +1,11 @@
+// lib/verifications/mukadam_dashboard/mukadam_dashborad.dart
+// FULL CODE — MukkadamListScreen with LanguageProvider + language-aware display
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../language_jsons/mukadam_verification_string.dart';
 import '../../mukadan/authentication/userProvider.dart';
+import '../../provider/language_provider.dart';
 import '../update_screen.dart';
 import 'mukadam_service.dart';
 import 'mukkadam_data_model.dart';
@@ -13,55 +18,57 @@ class MukkadamListScreen extends StatefulWidget {
 }
 
 class _MukkadamListScreenState extends State<MukkadamListScreen> {
-  late Future<List<MukkadamDataModel>> _futureMukkadams;
-  final MukkadamService _mukkadamService = MukkadamService();
-  String _searchQuery = "";
+  late Future<List<MukkadamDataModel>> futureMukkadams;
+  final MukkadamService mukkadamService = MukkadamService();
+  String searchQuery = '';
 
-  // ── Color Palette (matching VillagePlansDashboard) ──
-  static const Color _primaryColor = Color(0xFF1E3A5F);
-  static const Color _accentColor = Color(0xFF3B82F6);
-  static const Color _successColor = Color(0xFF10B981);
-  static const Color _warningColor = Color(0xFFF59E0B);
-  static const Color _errorColor = Color(0xFFEF4444);
-  static const Color _backgroundColor = Color(0xFFF8FAFC);
-  static const Color _cardColor = Colors.white;
-  static const Color _textPrimary = Color(0xFF1F2937);
-  static const Color _textSecondary = Color(0xFF6B7280);
-  static const Color _borderColor = Color(0xFFE5E7EB);
-  static const Color _dividerColor = Color(0xFFF3F4F6);
+  // Color Palette (matching VillagePlansDashboard)
+  static const Color primaryColor = Color(0xFF1E3A5F);
+  static const Color accentColor = Color(0xFF3B82F6);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFF59E0B);
+  static const Color errorColor = Color(0xFFEF4444);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardColor = Colors.white;
+  static const Color textPrimary = Color(0xFF1F2937);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color borderColor = Color(0xFFE5E7EB);
+  static const Color dividerColor = Color(0xFFF3F4F6);
 
   @override
   void initState() {
     super.initState();
-    _futureMukkadams = _loadMukkadams();
+    futureMukkadams = _loadMukkadams();
   }
 
   Future<List<MukkadamDataModel>> _loadMukkadams() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final int userId = userProvider.user?.id ?? 1;
-    return _mukkadamService.fetchMukkadams(userId);
+    return mukkadamService.fetchMukkadams(userId);
   }
 
   void _refresh() {
     setState(() {
-      _futureMukkadams = _loadMukkadams();
+      futureMukkadams = _loadMukkadams();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: _primaryColor,
+        backgroundColor: primaryColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Mukadam Verification',
-          style: TextStyle(
+        title: Text(
+          MukadamVerificationStrings.get('mukadamverification', lang),
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -71,83 +78,79 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
       ),
       body: Column(
         children: [
-          // ── Search Bar (outside AppBar) ──
+          // Search Bar
           Container(
-            color: _backgroundColor,
+            color: backgroundColor,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: TextField(
               onChanged: (value) {
                 setState(() {
-                  _searchQuery = value.toLowerCase();
+                  searchQuery = value.toLowerCase();
                 });
               },
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: _textPrimary,
+                color: textPrimary,
               ),
-              cursorColor: _primaryColor,
+              cursorColor: primaryColor,
               decoration: InputDecoration(
-                hintText: 'Search by name...',
+                hintText: MukadamVerificationStrings.get('searchbyname', lang),
                 hintStyle: const TextStyle(
-                  color: _textSecondary,
+                  color: textSecondary,
                   fontWeight: FontWeight.w400,
                   fontSize: 14,
                 ),
                 prefixIcon: const Icon(
                   Icons.search_rounded,
-                  color: _textSecondary,
+                  color: textSecondary,
                   size: 20,
                 ),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 16,
-                ),
+                    vertical: 10, horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: _borderColor),
+                  borderSide: const BorderSide(color: borderColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: _borderColor),
+                  borderSide: const BorderSide(color: borderColor),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide:
-                  const BorderSide(color: _accentColor, width: 1.5),
+                  const BorderSide(color: accentColor, width: 1.5),
                 ),
               ),
             ),
           ),
-          // ── Body Content ──
-          Expanded(child: _buildBody()),
+          // Body Content
+          Expanded(child: _buildBody(lang)),
         ],
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(String lang) {
     return FutureBuilder<List<MukkadamDataModel>>(
-      future: _futureMukkadams,
+      future: futureMukkadams,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(
-              color: _primaryColor,
-              strokeWidth: 2.5,
-            ),
+                color: primaryColor, strokeWidth: 2.5),
           );
         }
 
         if (snapshot.hasError) {
           return _buildStatusMessage(
             icon: Icons.wifi_off_rounded,
-            iconColor: _errorColor,
-            title: 'Something went wrong',
+            iconColor: errorColor,
+            title: MukadamVerificationStrings.get('somethingwentwrong', lang),
             subtitle: snapshot.error.toString(),
-            actionLabel: 'Try Again',
+            actionLabel: MukadamVerificationStrings.get('tryagain', lang),
             onAction: _refresh,
           );
         }
@@ -155,40 +158,41 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _buildStatusMessage(
             icon: Icons.people_outline_rounded,
-            iconColor: _textSecondary,
-            title: 'No Mukkadams Found',
-            subtitle:
-            'There are no unverified profiles\nto display at the moment.',
+            iconColor: textSecondary,
+            title: MukadamVerificationStrings.get('nomukkadamsfound', lang),
+            subtitle: MukadamVerificationStrings.get('nounverifiedprofiles', lang),
           );
         }
 
         final filteredMukkadams = snapshot.data!.where((m) {
+          // Filter out fully verified
           if (m.isFullyVerified || m.isAllVerified) return false;
-          if (_searchQuery.isNotEmpty) {
-            // ✅ UPDATED — Search both English and Marathi names
-            return m.mukkadamName.toLowerCase().contains(_searchQuery) ||
-                (m.marathiName?.toLowerCase().contains(_searchQuery) ?? false);
+
+          // Search filter: search both English and Marathi names
+          if (searchQuery.isNotEmpty) {
+            return m.mukkadamName.toLowerCase().contains(searchQuery) ||
+                (m.marathiName?.toLowerCase().contains(searchQuery) ?? false);
           }
           return true;
         }).toList();
 
         if (filteredMukkadams.isEmpty) {
           return _buildStatusMessage(
-            icon: _searchQuery.isNotEmpty
+            icon: searchQuery.isNotEmpty
                 ? Icons.search_off_rounded
                 : Icons.people_outline_rounded,
-            iconColor: _textSecondary,
-            title: _searchQuery.isNotEmpty
-                ? 'No Matching Results'
-                : 'No Mukkadams Found',
-            subtitle: _searchQuery.isNotEmpty
-                ? 'Try adjusting your search.'
-                : 'There are no unverified profiles to display.',
+            iconColor: textSecondary,
+            title: searchQuery.isNotEmpty
+                ? MukadamVerificationStrings.get('nomatchingresults', lang)
+                : MukadamVerificationStrings.get('nomukkadamsfound', lang),
+            subtitle: searchQuery.isNotEmpty
+                ? MukadamVerificationStrings.get('tryadjustingsearch', lang)
+                : MukadamVerificationStrings.get('nounverifiedprofiles', lang),
           );
         }
 
         return RefreshIndicator(
-          color: _primaryColor,
+          color: primaryColor,
           onRefresh: () async => _refresh(),
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -200,16 +204,16 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    '${filteredMukkadams.length} unverified profile${filteredMukkadams.length == 1 ? '' : 's'}',
+                    '${filteredMukkadams.length} ${MukadamVerificationStrings.get('unverifiedprofile', lang)}${filteredMukkadams.length > 1 ? MukadamVerificationStrings.get('plural_s', lang) : ''}',
                     style: const TextStyle(
-                      color: _textSecondary,
+                      color: textSecondary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 );
               }
-              return _buildMukkadamCard(filteredMukkadams[index - 1]);
+              return _buildMukkadamCard(filteredMukkadams[index - 1], lang);
             },
           ),
         );
@@ -217,16 +221,21 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
     );
   }
 
-  Widget _buildMukkadamCard(MukkadamDataModel mukkadam) {
+  Widget _buildMukkadamCard(MukkadamDataModel mukkadam, String lang) {
     final bool isAnyVerified = mukkadam.isAnyVerified;
-    final Color statusColor = isAnyVerified ? _warningColor : _errorColor;
-    final String statusText = isAnyVerified ? 'Pending' : 'Not Verified';
+    final Color statusColor = isAnyVerified ? warningColor : errorColor;
+    final String statusText = isAnyVerified
+        ? MukadamVerificationStrings.get('pending', lang)
+        : MukadamVerificationStrings.get('notverified', lang);
+
+    // ✅ Language-aware name display
+    final String displayName = mukkadam.getDisplayName(lang);
 
     return Container(
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _borderColor),
+        border: Border.all(color: borderColor),
       ),
       child: Material(
         color: Colors.transparent,
@@ -243,27 +252,29 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
             );
             _refresh();
           },
-          splashColor: _accentColor.withOpacity(0.05),
+          splashColor: accentColor.withOpacity(0.05),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             child: Row(
               children: [
-                // Avatar — uses original English name initial
+                // Avatar — always uses English name initial
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor: _primaryColor.withOpacity(0.08),
+                  backgroundColor: primaryColor.withOpacity(0.08),
                   child: Text(
                     mukkadam.mukkadamName.isNotEmpty
                         ? mukkadam.mukkadamName[0].toUpperCase()
                         : '?',
                     style: const TextStyle(
-                      color: _primaryColor,
+                      color: primaryColor,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
+
                 // Content
                 Expanded(
                   child: Column(
@@ -274,12 +285,12 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              // ✅ UPDATED — Shows "Name / मराठी नाव"
-                              mukkadam.displayName,
+                              // ✅ Shows ONLY the selected language name
+                              displayName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 15,
-                                color: _textPrimary,
+                                color: textPrimary,
                                 letterSpacing: -0.2,
                               ),
                               maxLines: 1,
@@ -289,9 +300,7 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 2,
-                            ),
+                                horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
                               color: statusColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
@@ -308,33 +317,41 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
                         ],
                       ),
                       const SizedBox(height: 4),
+
                       // Location
                       Text(
-                        mukkadam.village.isNotEmpty
-                            ? mukkadam.village
-                            : mukkadam.district,
+                        mukkadam.getDisplayLocation(lang),
                         style: const TextStyle(
-                          color: _textSecondary,
+                          color: textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 8),
+
                       // Verification progress
                       Row(
                         children: [
-                          _buildDot('Aadhaar', mukkadam.isAadharVerified),
+                          _buildDot(
+                              MukadamVerificationStrings.get('aadhaar', lang),
+                              mukkadam.isAadharVerified),
                           const SizedBox(width: 10),
-                          _buildDot('PAN', mukkadam.isPanVerified),
+                          _buildDot(
+                              MukadamVerificationStrings.get('pan', lang),
+                              mukkadam.isPanVerified),
                           const SizedBox(width: 10),
-                          _buildDot('Voter', mukkadam.isVoterIdVerified),
+                          _buildDot(
+                              MukadamVerificationStrings.get('voter', lang),
+                              mukkadam.isVoterIdVerified),
                           const SizedBox(width: 10),
-                          _buildDot('Face', mukkadam.isFaceVerified),
+                          _buildDot(
+                              MukadamVerificationStrings.get('face', lang),
+                              mukkadam.isFaceVerified),
                           const Spacer(),
                           Text(
                             '${mukkadam.verifiedCount}/4',
                             style: const TextStyle(
-                              color: _textSecondary,
+                              color: textSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),
@@ -345,11 +362,8 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: _borderColor,
-                  size: 20,
-                ),
+                const Icon(Icons.chevron_right_rounded,
+                    color: borderColor, size: 20),
               ],
             ),
           ),
@@ -366,7 +380,7 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
           width: 6,
           height: 6,
           decoration: BoxDecoration(
-            color: isVerified ? _successColor : _borderColor,
+            color: isVerified ? successColor : borderColor,
             shape: BoxShape.circle,
           ),
         ),
@@ -374,7 +388,7 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
         Text(
           label,
           style: TextStyle(
-            color: isVerified ? _textPrimary : _textSecondary,
+            color: isVerified ? textPrimary : textSecondary,
             fontSize: 10,
             fontWeight: isVerified ? FontWeight.w600 : FontWeight.w500,
           ),
@@ -404,7 +418,7 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: _textPrimary,
+                color: textPrimary,
               ),
             ),
             const SizedBox(height: 6),
@@ -413,7 +427,7 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
-                color: _textSecondary,
+                color: textSecondary,
                 fontWeight: FontWeight.w400,
                 height: 1.5,
               ),
@@ -423,22 +437,18 @@ class _MukkadamListScreenState extends State<MukkadamListScreen> {
               TextButton(
                 onPressed: onAction,
                 style: TextButton.styleFrom(
-                  foregroundColor: _primaryColor,
+                  foregroundColor: primaryColor,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 10,
-                  ),
+                      horizontal: 24, vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: const BorderSide(color: _borderColor),
+                    side: const BorderSide(color: borderColor),
                   ),
                 ),
                 child: Text(
                   actionLabel,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
+                      fontWeight: FontWeight.w600, fontSize: 13),
                 ),
               ),
             ],

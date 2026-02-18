@@ -1,84 +1,75 @@
 import 'dart:io';
+import 'package:devlipi/devlipi.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mukadam_bi/verifications/transporter_verifcations/verificatrion_service.dart';
 import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
+import 'package:translator/translator.dart';
+import '../language_jsons/transporter_update_strings.dart';
+import '../provider/language_provider.dart';
 
-// ──────────────────────────── Validators (ALL OPTIONAL) ────────────────────────────
+// ──────────────────────────── Validators (ALL OPTIONAL, language-aware) ────────────────────────────
 class DocValidators {
-  /// PAN: ABCDE1234F  (5 letters + 4 digits + 1 letter)
-  /// OPTIONAL: returns null if empty
-  static String? pan(String? value) {
+  static String? pan(String? value, String lang) {
     if (value == null || value.trim().isEmpty) return null;
     final v = value.trim().toUpperCase();
     if (v.length != 10) {
-      return 'PAN must be exactly 10 characters';
+      return TransporterUpdateStrings.get('pan_length_error', lang);
     }
     if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(v)) {
-      return 'Invalid PAN format (e.g. ABCDE1234F)';
+      return TransporterUpdateStrings.get('pan_format_error', lang);
     }
     return null;
   }
 
-  /// Aadhaar: exactly 12 digits, must not start with 0 or 1
-  /// OPTIONAL: returns null if empty
-  static String? aadhaar(String? value) {
+  static String? aadhaar(String? value, String lang) {
     if (value == null || value.trim().isEmpty) return null;
     final v = value.trim().replaceAll(' ', '');
     if (v.length != 12) {
-      return 'Aadhaar must be exactly 12 digits';
+      return TransporterUpdateStrings.get('aadhar_length_error', lang);
     }
     if (!RegExp(r'^[2-9][0-9]{11}$').hasMatch(v)) {
-      return 'Invalid Aadhaar (12 digits, cannot start with 0 or 1)';
+      return TransporterUpdateStrings.get('aadhar_format_error', lang);
     }
     return null;
   }
 
-  /// Indian Vehicle Registration Number
-  ///  Standard: KA01AB1234 / KA 01 AB 1234
-  ///  BH series: 22BH1234AB
-  /// OPTIONAL: returns null if empty
-  static String? vehicleNumber(String? value) {
+  static String? vehicleNumber(String? value, String lang) {
     if (value == null || value.trim().isEmpty) return null;
     final v = value.trim().toUpperCase().replaceAll(RegExp(r'[\s-]'), '');
     final standard = RegExp(r'^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$');
     final bhSeries = RegExp(r'^[0-9]{2}BH[0-9]{4}[A-HJ-NP-Z]{1,2}$');
     if (!standard.hasMatch(v) && !bhSeries.hasMatch(v)) {
-      return 'Invalid vehicle number (e.g. KA01AB1234)';
+      return TransporterUpdateStrings.get('rc_format_error', lang);
     }
     return null;
   }
 
-  /// Indian Driving License
-  /// OPTIONAL: returns null if empty
-  static String? drivingLicense(String? value) {
+  static String? drivingLicense(String? value, String lang) {
     if (value == null || value.trim().isEmpty) return null;
     final v = value.trim().toUpperCase().replaceAll(RegExp(r'[\s-]'), '');
     if (!RegExp(r'^[A-Z]{2}[0-9]{2}(19|20)[0-9]{2}[0-9]{7}$').hasMatch(v)) {
-      return 'Invalid DL format (e.g. KA0120201234567)';
+      return TransporterUpdateStrings.get('dl_format_error', lang);
     }
     return null;
   }
 
-  /// Voter ID / EPIC: 3 uppercase letters + 7 digits = 10 chars
-  /// OPTIONAL: returns null if empty
-  static String? voterId(String? value) {
+  static String? voterId(String? value, String lang) {
     if (value == null || value.trim().isEmpty) return null;
     final v = value.trim().toUpperCase();
     if (v.length != 10) {
-      return 'Voter ID must be exactly 10 characters';
+      return TransporterUpdateStrings.get('voter_length_error', lang);
     }
     if (!RegExp(r'^[A-Z]{3}[0-9]{7}$').hasMatch(v)) {
-      return 'Invalid Voter ID format (e.g. ABC1234567)';
+      return TransporterUpdateStrings.get('voter_format_error', lang);
     }
     return null;
   }
 }
 
 // ──────────────────────────── Main Screen ────────────────────────────
-
-
 
 class TransporterUpdateScreen extends StatefulWidget {
   final int transporterId;
@@ -94,6 +85,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
   final VerificationService _service = VerificationService();
   final ImagePicker _picker = ImagePicker();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GoogleTranslator _translator = GoogleTranslator();
 
   final TextEditingController _panController = TextEditingController();
   final TextEditingController _aadharController = TextEditingController();
@@ -112,6 +104,9 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
   String? _localRcPath;
   String? _localDlPath;
   String? _localVoterIdPath;
+
+  // ✅ Marathi name for language-aware AppBar
+  String? _marathiName;
 
   // ── Professional Color Palette (matching VillagePlansDashboard) ──
   static const Color _primaryColor = Color(0xFF1E3A5F);
@@ -142,12 +137,36 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
     super.dispose();
   }
 
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //  TRANSLATION HELPER
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Future<String> _toMarathi(String text) async {
+    if (text.trim().isEmpty) return text;
+    try {
+      final result = await _translator.translate(text, from: 'en', to: 'mr');
+      if (result.text.toLowerCase() != text.toLowerCase()) {
+        return result.text;
+      }
+    } catch (_) {}
+    return Devlipi.transliterate(text);
+  }
+
   // ─────────── Data Loading ───────────
   void _loadDetails() async {
     try {
       final data = await _service.fetchTransporterDetails(widget.transporterId);
+
+      // ✅ Translate name for Marathi display
+      final String englishName = data['name'] ?? '';
+      String? translatedName;
+      if (englishName.trim().isNotEmpty) {
+        translatedName = await _toMarathi(englishName);
+      }
+
       setState(() {
         _data = data;
+        _marathiName = translatedName;
         _panController.text = data['pan_number'] ?? '';
         _aadharController.text = data['aadhar_number'] ?? '';
         _rcController.text = data['vehicle_number'] ?? '';
@@ -162,8 +181,9 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
         _localVoterIdPath = null;
       });
     } catch (e) {
+      final lang = context.read<LanguageProvider>().language;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text("${TransporterUpdateStrings.get('error', lang)}: $e")),
       );
       setState(() => _isLoading = false);
     }
@@ -176,6 +196,8 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
 
   // ─────────── Image Picker ───────────
   void _showPickerOptions(String type) {
+    final lang = context.read<LanguageProvider>().language;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -185,10 +207,10 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
         return SafeArea(
           child: Wrap(
             children: [
-              const ListTile(
+              ListTile(
                 title: Text(
-                  'Select Image Source',
-                  style: TextStyle(
+                  TransporterUpdateStrings.get('select_image_source', lang),
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     color: _textPrimary,
                   ),
@@ -197,8 +219,9 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               ListTile(
                 leading:
                 const Icon(Icons.photo_library, color: _primaryColor),
-                title: const Text('Gallery',
-                    style: TextStyle(
+                title: Text(
+                    TransporterUpdateStrings.get('gallery', lang),
+                    style: const TextStyle(
                         fontWeight: FontWeight.w700, color: _textPrimary)),
                 onTap: () {
                   Navigator.pop(context);
@@ -207,8 +230,9 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: _primaryColor),
-                title: const Text('Camera',
-                    style: TextStyle(
+                title: Text(
+                    TransporterUpdateStrings.get('camera', lang),
+                    style: const TextStyle(
                         fontWeight: FontWeight.w700, color: _textPrimary)),
                 onTap: () {
                   Navigator.pop(context);
@@ -261,11 +285,12 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
 
   // ─────────── Submit ───────────
   void _handleUpdate() async {
-    // Validate form first (only format checks — all optional)
+    final lang = context.read<LanguageProvider>().language;
+
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fix the errors before submitting"),
+        SnackBar(
+          content: Text(TransporterUpdateStrings.get('fix_errors', lang)),
           backgroundColor: _errorColor,
         ),
       );
@@ -375,7 +400,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
 
       if (updateData.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No changes to update')),
+          SnackBar(content: Text(TransporterUpdateStrings.get('no_changes', lang))),
         );
         setState(() => _isSubmitting = false);
         return;
@@ -386,20 +411,21 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Updated Successfully"),
+          SnackBar(
+            content: Text(TransporterUpdateStrings.get('updated_successfully', lang)),
             backgroundColor: _successColor,
           ),
         );
         if (mounted) Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to update details")),
+          SnackBar(content: Text(TransporterUpdateStrings.get('failed_to_update', lang))),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Error: $e")));
+      final lang = context.read<LanguageProvider>().language;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${TransporterUpdateStrings.get('error', lang)}: $e")));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -408,8 +434,8 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
   // ───────────────────────── UI Builders ─────────────────────────
 
   Widget _buildVerificationSection({
-    required String label,
-    required String marathiLabel,
+    required String labelKey,
+    required String lang,
     required bool isVerified,
     required TextEditingController controller,
     required String? networkImageUrl,
@@ -420,10 +446,15 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
     TextCapitalization textCapitalization = TextCapitalization.none,
     TextInputType keyboardType = TextInputType.text,
     int? maxLength,
-    String? helperText,
+    String? helperTextKey,
     bool showTextField = true,
     bool showImagePicker = true,
   }) {
+    // ✅ Resolve display label based on selected language
+    final String displayLabel = TransporterUpdateStrings.get(labelKey, lang);
+    final String? helperText =
+    helperTextKey != null ? TransporterUpdateStrings.get(helperTextKey, lang) : null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -446,29 +477,14 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                        color: _textPrimary,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      marathiLabel,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        color: _textSecondary,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  displayLabel,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    color: _textPrimary,
+                    letterSpacing: -0.3,
+                  ),
                 ),
               ),
               if (isVerified)
@@ -481,14 +497,14 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                     border:
                     Border.all(color: _successColor.withOpacity(0.3)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.verified_rounded,
+                      const Icon(Icons.verified_rounded,
                           color: _successColor, size: 14),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        "Verified",
-                        style: TextStyle(
+                        TransporterUpdateStrings.get('verified', lang),
+                        style: const TextStyle(
                           color: _successColor,
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -517,13 +533,15 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                 color: _textPrimary,
               ),
               decoration: InputDecoration(
-                labelText: "$label Number",
+                labelText:
+                "$displayLabel ${TransporterUpdateStrings.get('number', lang)}",
                 labelStyle: const TextStyle(
                   color: _textSecondary,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
-                hintText: "Enter $label Number",
+                hintText:
+                "${TransporterUpdateStrings.get('enter', lang)} $displayLabel ${TransporterUpdateStrings.get('number', lang)}",
                 hintStyle: TextStyle(
                   color: _textSecondary.withOpacity(0.6),
                   fontWeight: FontWeight.w500,
@@ -596,10 +614,11 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                         height: 180,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                        errorBuilder: (_, __, ___) =>
+                            _buildPlaceholder(lang),
                       )
                     else
-                      _buildPlaceholder(),
+                      _buildPlaceholder(lang),
                     if (!isVerified)
                       Positioned(
                         bottom: 8,
@@ -636,7 +655,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(String lang) {
     return Container(
       height: 120,
       width: double.infinity,
@@ -651,9 +670,9 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
           Icon(Icons.cloud_upload_outlined,
               size: 32, color: _accentColor.withOpacity(0.7)),
           const SizedBox(height: 8),
-          const Text(
-            "Upload Document",
-            style: TextStyle(
+          Text(
+            TransporterUpdateStrings.get('upload_document', lang),
+            style: const TextStyle(
               color: _accentColor,
               fontWeight: FontWeight.w700,
               fontSize: 13,
@@ -667,6 +686,8 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
   // ───────────────────────── Build ─────────────────────────
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+
     // ── Loading State ──
     if (_isLoading) {
       return const Scaffold(
@@ -686,6 +707,14 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
     bool isDlVerified = _data?['is_dl_verified'] ?? false;
     bool isVoterVerified = _data?['voter_id_verified'] ?? false;
 
+    // ✅ Language-aware name display
+    final String englishName = _data?['name'] ?? '';
+    final String displayName = (lang == 'mr' &&
+        _marathiName != null &&
+        _marathiName!.isNotEmpty)
+        ? _marathiName!
+        : englishName;
+
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
@@ -701,7 +730,9 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _data?['name'] ?? "Update Details",
+              displayName.isNotEmpty
+                  ? displayName
+                  : TransporterUpdateStrings.get('update_details', lang),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
@@ -710,7 +741,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
               ),
             ),
             Text(
-              'Verification Details / पडताळणी तपशील',
+              TransporterUpdateStrings.get('verification_details', lang),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white.withOpacity(0.9),
@@ -727,10 +758,10 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
           const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
             children: [
-              // ── Profile Photo (no text field, no validation) ──
+              // ── Profile Photo ──
               _buildVerificationSection(
-                label: "Profile Photo",
-                marathiLabel: "प्रोफाइल फोटो",
+                labelKey: 'profile_photo',
+                lang: lang,
                 type: "PROFILE",
                 isVerified: _isFaceVerified,
                 controller: _dummyController,
@@ -741,14 +772,14 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
 
               // ── RC Book ──
               _buildVerificationSection(
-                label: "RC Book",
-                marathiLabel: "आर.सी. बुक (वाहन नोंदणी प्रमाणपत्र)",
+                labelKey: 'rc_book',
+                lang: lang,
                 type: "RC",
                 isVerified: isRcVerified,
                 controller: _rcController,
                 networkImageUrl: _data?['rc_book_url'],
                 localPath: _localRcPath,
-                validator: DocValidators.vehicleNumber,
+                validator: (v) => DocValidators.vehicleNumber(v, lang),
                 maxLength: 13,
                 textCapitalization: TextCapitalization.characters,
                 keyboardType: TextInputType.text,
@@ -757,19 +788,19 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                       RegExp(r'[A-Za-z0-9\s-]')),
                   UpperCaseTextFormatter(),
                 ],
-                helperText: 'Format: KA01AB1234',
+                helperTextKey: 'rc_helper',
               ),
 
               // ── Driving License ──
               _buildVerificationSection(
-                label: "Driving License",
-                marathiLabel: "वाहन चालक परवाना",
+                labelKey: 'driving_license',
+                lang: lang,
                 type: "DL",
                 isVerified: isDlVerified,
                 controller: _dlController,
                 networkImageUrl: _data?['driving_license_url'],
                 localPath: _localDlPath,
-                validator: DocValidators.drivingLicense,
+                validator: (v) => DocValidators.drivingLicense(v, lang),
                 maxLength: 20,
                 textCapitalization: TextCapitalization.characters,
                 keyboardType: TextInputType.text,
@@ -778,19 +809,19 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                       RegExp(r'[A-Za-z0-9\s-]')),
                   UpperCaseTextFormatter(),
                 ],
-                helperText: 'Format: KA0120201234567',
+                helperTextKey: 'dl_helper',
               ),
 
-              // ── PAN Card: 10 chars — ABCDE1234F ──
+              // ── PAN Card ──
               _buildVerificationSection(
-                label: "PAN Card",
-                marathiLabel: "पॅन कार्ड",
+                labelKey: 'pan_card',
+                lang: lang,
                 type: "PAN",
                 isVerified: isPanVerified,
                 controller: _panController,
                 networkImageUrl: _data?['pan_card_url'],
                 localPath: _localPanPath,
-                validator: DocValidators.pan,
+                validator: (v) => DocValidators.pan(v, lang),
                 maxLength: 10,
                 textCapitalization: TextCapitalization.characters,
                 keyboardType: TextInputType.text,
@@ -799,38 +830,37 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                       RegExp(r'[a-zA-Z0-9]')),
                   UpperCaseTextFormatter(),
                 ],
-                helperText:
-                'Format: ABCDE1234F (5 letters + 4 digits + 1 letter)',
+                helperTextKey: 'pan_helper',
               ),
 
-              // ── Aadhar Card: 12 digits ──
+              // ── Aadhar Card ──
               _buildVerificationSection(
-                label: "Aadhar Card",
-                marathiLabel: "आधार कार्ड",
+                labelKey: 'aadhar_card',
+                lang: lang,
                 type: "AADHAR",
                 isVerified: isAadharVerified,
                 controller: _aadharController,
                 networkImageUrl: _data?['aadhar_card_url'],
                 localPath: _localAadharPath,
-                validator: DocValidators.aadhaar,
+                validator: (v) => DocValidators.aadhaar(v, lang),
                 maxLength: 12,
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                 ],
-                helperText: '12-digit number (cannot start with 0 or 1)',
+                helperTextKey: 'aadhar_helper',
               ),
 
-              // ── Voter ID: 10 chars — ABC1234567 ──
+              // ── Voter ID ──
               _buildVerificationSection(
-                label: "Voter ID",
-                marathiLabel: "मतदार ओळखपत्र",
+                labelKey: 'voter_id',
+                lang: lang,
                 type: "VOTER",
                 isVerified: isVoterVerified,
                 controller: _voterIdController,
                 networkImageUrl: _data?['voter_id_card_url'],
                 localPath: _localVoterIdPath,
-                validator: DocValidators.voterId,
+                validator: (v) => DocValidators.voterId(v, lang),
                 maxLength: 10,
                 textCapitalization: TextCapitalization.characters,
                 keyboardType: TextInputType.text,
@@ -839,7 +869,7 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                       RegExp(r'[a-zA-Z0-9]')),
                   UpperCaseTextFormatter(),
                 ],
-                helperText: 'Format: ABC1234567 (3 letters + 7 digits)',
+                helperTextKey: 'voter_helper',
               ),
 
               const SizedBox(height: 12),
@@ -857,8 +887,8 @@ class _TransporterUpdateScreenState extends State<TransporterUpdateScreen> {
                     : const Icon(Icons.save_rounded, size: 18),
                 label: Text(
                   _isSubmitting
-                      ? "Updating... / अपडेट होत आहे..."
-                      : "Save & Update Details / तपशील जतन करा",
+                      ? TransporterUpdateStrings.get('updating', lang)
+                      : TransporterUpdateStrings.get('save_update', lang),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,

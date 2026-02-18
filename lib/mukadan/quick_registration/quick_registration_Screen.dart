@@ -9,7 +9,9 @@ import 'package:mukadam_bi/mukadan/quick_registration/quick_registration_service
 import 'package:provider/provider.dart';
 
 import '../../geo_tagging.dart';
+import '../../language_jsons/app_strings.dart';
 import '../../notes/data.dart';
+import '../../provider/language_provider.dart';
 import '../authentication/userProvider.dart';
 
 class QuickMukkadamRegistrationScreen extends StatefulWidget {
@@ -25,7 +27,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   final ImagePicker _picker = ImagePicker();
   final GeoTaggingService _geoTaggingService = GeoTaggingService();
 
-  // ── Professional Color Palette (matching VillagePlansDashboard / MukadamDashboard) ──
+  // ── Professional Color Palette ──
   static const Color _primaryColor = Color(0xFF1E3A5F);
   static const Color _accentColor = Color(0xFF3B82F6);
   static const Color _successColor = Color(0xFF10B981);
@@ -45,21 +47,17 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   final TextEditingController _crewSizeController = TextEditingController();
   final TextEditingController _maxCrewCapacityController = TextEditingController();
 
-  // Alternative Contact Controllers
   final TextEditingController _altContact1NameController = TextEditingController();
   final TextEditingController _altPhone1Controller = TextEditingController();
   final TextEditingController _altContact2NameController = TextEditingController();
   final TextEditingController _altPhone2Controller = TextEditingController();
 
-  // Availability Controllers
   final TextEditingController _startDateController = TextEditingController();
   final TextEditingController _endDateController = TextEditingController();
 
-  // Location Controllers - Made read-only
   final TextEditingController _latController = TextEditingController();
   final TextEditingController _longController = TextEditingController();
 
-  // ID Number Controllers
   final TextEditingController _aadharNumberController = TextEditingController();
   final TextEditingController _panNumberController = TextEditingController();
   final TextEditingController _voterIdNumberController = TextEditingController();
@@ -92,11 +90,10 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   final TextEditingController shootTyingStringsController = TextEditingController();
   final TextEditingController thirdDippingController = TextEditingController();
 
-  // ── Kharad Tender Rates Controllers ──
+  // Kharad Tender Rates Controllers
   final TextEditingController _tenderTotalPriceController = TextEditingController();
   String _tenderReferenceImageUrl = '';
 
-  // Static tender activity names (fixed, not editable)
   static const List<String> _tenderActivityNames = [
     'छाटणी',
     'शूट निवड (विरळणी)',
@@ -110,13 +107,11 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     'काडी बांधणे (क्लिप्ससह)',
   ];
 
-  // Price controllers for each static activity (one per activity)
   final List<TextEditingController> _tenderPriceControllers = List.generate(
     10,
         (_) => TextEditingController(),
   );
 
-  // ── Kharad Tender Rates Handler ──
   bool _hasAnyTenderActivity() {
     return _tenderPriceControllers.any((c) => c.text.trim().isNotEmpty);
   }
@@ -132,7 +127,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     }
   }
 
-  File? _selectedImage; // Location capture photo
+  File? _selectedImage;
   File? _profilePhoto;
   File? _aadharCardPhoto;
   File? _panCardPhoto;
@@ -143,7 +138,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   String _smartphoneAvailability = 'yes';
   String _transportMode = 'own_bike';
 
-  // Notification preferences
   bool _whatsappNotification = false;
   bool _smsNotification = false;
   bool _callNotification = false;
@@ -171,7 +165,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     for (var c in _tenderPriceControllers) {
       c.dispose();
     }
-    // ... your existing dispose calls ...
     super.dispose();
   }
 
@@ -191,7 +184,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           if (mounted) {
-            _showSnackBar('Location permissions are denied. Please enable location permissions.');
+            final lang = context.read<LanguageProvider>().language;
+            _showSnackBar(AppStrings.get('location_permission_msg', lang));
           }
           return false;
         }
@@ -244,7 +238,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         if (mounted) {
-          _showSnackBar('Location permissions are denied. Please enable location permissions.');
+          final lang = context.read<LanguageProvider>().language;
+          _showSnackBar(AppStrings.get('location_permission_msg', lang));
         }
         return Future.error('Location permissions are denied');
       }
@@ -261,6 +256,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   }
 
   Future<void> _showLocationServiceDialog() async {
+    final lang = context.read<LanguageProvider>().language;
     return showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -270,14 +266,14 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
             children: [
               Icon(Icons.location_off, color: _warningColor, size: 28),
               const SizedBox(width: 12),
-              const Text('Location Service Required'),
+              Text(AppStrings.get('location_service_required', lang)),
             ],
           ),
-          content: const Text('Location services are required to capture GPS coordinates with photos. Please enable location services to continue.'),
+          content: Text(AppStrings.get('location_service_msg', lang)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: TextStyle(color: _textSecondary)),
+              child: Text(AppStrings.get('cancel', lang), style: TextStyle(color: _textSecondary)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -289,7 +285,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Open Settings'),
+              child: Text(AppStrings.get('open_settings', lang)),
             ),
           ],
         );
@@ -298,6 +294,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   }
 
   Future<void> _showPermissionSettingsDialog() async {
+    final lang = context.read<LanguageProvider>().language;
     return showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -307,16 +304,14 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
             children: [
               Icon(Icons.lock_outline, color: _warningColor, size: 28),
               const SizedBox(width: 12),
-              const Text('Location Permission Required'),
+              Text(AppStrings.get('location_permission_required', lang)),
             ],
           ),
-          content: const Text(
-            'Location permission is required to capture GPS coordinates with photos. Please enable it from app settings to continue.',
-          ),
+          content: Text(AppStrings.get('location_permission_msg', lang)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: TextStyle(color: _textSecondary)),
+              child: Text(AppStrings.get('cancel', lang), style: TextStyle(color: _textSecondary)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -328,7 +323,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Open Settings'),
+              child: Text(AppStrings.get('open_settings', lang)),
             ),
           ],
         );
@@ -363,7 +358,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     }
   }
 
-  // --- Document Image Picker (No location check needed) ---
   Future<void> _pickDocumentImage(ImageSource source, String documentType) async {
     final XFile? image = await _picker.pickImage(source: source);
     if (image != null) {
@@ -387,6 +381,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   }
 
   void _showDocumentPickerOptions(String documentType) {
+    final lang = context.read<LanguageProvider>().language;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -415,8 +410,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                 ),
                 child: const Icon(Icons.camera_alt, color: _primaryColor),
               ),
-              title: const Text('Camera', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('Take a photo'),
+              title: Text(AppStrings.get('camera', lang), style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(AppStrings.get('take_photo', lang)),
               onTap: () {
                 Navigator.pop(context);
                 _pickDocumentImage(ImageSource.camera, documentType);
@@ -431,8 +426,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                 ),
                 child: const Icon(Icons.photo_library, color: _primaryColor),
               ),
-              title: const Text('Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('Choose from gallery'),
+              title: Text(AppStrings.get('gallery', lang), style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(AppStrings.get('choose_from_gallery', lang)),
               onTap: () {
                 Navigator.pop(context);
                 _pickDocumentImage(ImageSource.gallery, documentType);
@@ -444,7 +439,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     );
   }
 
-  // Date Picker Logic
   Future<void> _selectStartDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -584,35 +578,17 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     );
   }
 
-  // ── Negative Rate Validation ──
   bool _hasNegativeRates() {
     final List<TextEditingController> rateControllers = [
-      aprilPruningController,
-      bagalBaliFutRemovalController,
-      berryThinningController,
-      bunchSelectionController,
-      bunchThinningController,
-      bunchTyingController,
-      bunchVariationController,
-      defaultRateController,
-      failFutRemovalController,
-      fingerThinningController,
-      firstDippingController,
-      firstFailFutRemovalController,
-      harvestingController,
-      newPlantationController,
-      otherRateController,
-      paperRemovalController,
-      paperWrappingController,
-      pastingController,
-      pruningController,
-      secondDippingController,
-      secondFailFutRemovalController,
-      shendaToppingController,
-      shootTyingController,
-      shootTyingClipsController,
-      shootTyingStringsController,
-      thirdDippingController,
+      aprilPruningController, bagalBaliFutRemovalController, berryThinningController,
+      bunchSelectionController, bunchThinningController, bunchTyingController,
+      bunchVariationController, defaultRateController, failFutRemovalController,
+      fingerThinningController, firstDippingController, firstFailFutRemovalController,
+      harvestingController, newPlantationController, otherRateController,
+      paperRemovalController, paperWrappingController, pastingController,
+      pruningController, secondDippingController, secondFailFutRemovalController,
+      shendaToppingController, shootTyingController, shootTyingClipsController,
+      shootTyingStringsController, thirdDippingController,
     ];
 
     for (var controller in rateControllers) {
@@ -626,68 +602,57 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     return false;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ██  CHANGED: SnackBar validation for Name & Mobile BEFORE
-  // ██  _formKey.currentState!.validate() — all in English
-  // ══════════════════════════════════════════════════════════════
   void _submitQuickForm() async {
-    // ── SnackBar validation for Mukkadam Name ──
+    final lang = context.read<LanguageProvider>().language;
+
     if (_mukkadamNameController.text.trim().isEmpty) {
-      _showSnackBar("Mukkadam Name is required");
+      _showSnackBar(AppStrings.get('mukkadam_name_required', lang));
       return;
     }
 
-    // ── SnackBar validation for Mobile Number ──
     if (_mobileNumbersController.text.trim().length != 10) {
-      _showSnackBar("Please enter a valid 10-digit Mobile Number");
+      _showSnackBar(AppStrings.get('valid_mobile_required', lang));
       return;
     }
 
     if (_formKey.currentState!.validate()) {
       if (_selectedState == null || _selectedDistrict == null || _selectedTaluka == null || _selectedVillage == null) {
-        _showSnackBar("Please select State, District, Taluka, and Village");
+        _showSnackBar(AppStrings.get('select_all_location', lang));
         return;
       }
 
-      // Validate profile photo (mandatory)
       if (_profilePhoto == null) {
-        _showSnackBar("Profile photo is mandatory");
+        _showSnackBar(AppStrings.get('profile_photo_mandatory', lang));
         return;
       }
 
-      // Validate crew size (mandatory)
       if (_crewSizeController.text.isEmpty) {
-        _showSnackBar("Crew size is mandatory");
+        _showSnackBar(AppStrings.get('crew_size_mandatory', lang));
         return;
       }
 
-      // Validate availability (mandatory)
       if (_startDateController.text.isEmpty) {
-        _showSnackBar("Availability start date is mandatory");
+        _showSnackBar(AppStrings.get('start_date_mandatory', lang));
         return;
       }
 
-      // Validate location capture photo (mandatory)
       if (_selectedImage == null) {
-        _showSnackBar("Location capture photo is mandatory");
+        _showSnackBar(AppStrings.get('location_photo_mandatory', lang));
         return;
       }
 
-      // ── Validate tender total price if activities are provided ──
       if (_hasAnyTenderActivity() && _tenderTotalPriceController.text.trim().isEmpty) {
-        _showSnackBar('Total price is required when tender activities are provided');
+        _showSnackBar(AppStrings.get('tender_total_required', lang));
         return;
       }
 
-      // Validate GPS coordinates (mandatory)
       if (_latController.text.isEmpty || _longController.text.isEmpty) {
-        _showSnackBar("GPS coordinates are mandatory. Please capture location photo");
+        _showSnackBar(AppStrings.get('gps_mandatory', lang));
         return;
       }
 
-      // ── Validate negative rates ──
       if (_hasNegativeRates()) {
-        _showSnackBar("Negative rates are not eligible to enter");
+        _showSnackBar(AppStrings.get('negative_rates_error', lang));
         return;
       }
 
@@ -698,13 +663,10 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
         "mobile_numbers": _mobileNumbersController.text,
         "crew_size": _crewSizeController.text,
         "max_crew_capacity": _maxCrewCapacityController.text,
-
-        // Alternative contacts with names
         "alternative_contact_1_name": _altContact1NameController.text,
         "alternative_mobile_1": _altPhone1Controller.text,
         "alternative_contact_2_name": _altContact2NameController.text,
         "alternative_mobile_2": _altPhone2Controller.text,
-
         "start_date": _startDateController.text,
         "end_date": _endDateController.text,
         "current_latitude": _latController.text,
@@ -712,15 +674,11 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
         "has_smartphone": _smartphoneAvailability,
         "is_permanent": _isPermanent,
         "transport_mode": _transportMode,
-
-        // Notification preferences object
         "notification_preferences": {
           "whatsapp": _whatsappNotification,
           "sms": _smsNotification,
           "call": _callNotification,
         },
-
-        // Kharad Tender Rates
         "tender_activities": {
           "activities": List.generate(_tenderActivityNames.length, (i) => {
             "name": _tenderActivityNames[i],
@@ -729,7 +687,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
           "total_price": _tenderTotalPriceController.text.trim(),
           "reference_image_url": _tenderReferenceImageUrl,
         },
-
         "aadhar_number": _aadharNumberController.text,
         "pan_number": _panNumberController.text,
         "voter_id_number": _voterIdNumberController.text,
@@ -741,8 +698,6 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
         "taluka_code": _selectedTaluka!['subdistrictcode'].toString(),
         "village": _selectedVillage!['villagenameenglish'],
         "village_code": _selectedVillage!['villagecode'].toString(),
-
-        // Rate card as nested object matching backend structure
         "rate_card": {
           "pruning_activities": {
             "pruning": pruningController.text,
@@ -787,11 +742,10 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
 
       if (authToken == null) {
         setState(() => _isLoadingLocations = false);
-        _showSnackBar("Session expired. Please login again.");
+        _showSnackBar(AppStrings.get('session_expired', lang));
         return;
       }
 
-      // Call the service with file paths
       final response = await quickRegistrationService().quickRegisterMukkadam(
         mukkadamData: mukkadamData,
         profilePhotoPath: _profilePhoto?.path,
@@ -806,7 +760,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
 
       if (mounted) {
         if (response['success']) {
-          _showSnackBar("Registration successful!");
+          _showSnackBar(AppStrings.get('registration_successful', lang));
           Navigator.pop(context);
         } else {
           final message = response['message'] ?? 'Registration failed';
@@ -823,10 +777,11 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lang = context.watch<LanguageProvider>().language;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : _backgroundColor,
-      appBar: _buildAppBar(isDark),
+      appBar: _buildAppBar(isDark, lang),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -836,31 +791,24 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ══════════════════════════════════════════════
-                  // ██  CHANGED: Marathi subtitles added for
-                  // ██  Mukkadam Name & Mobile Number ONLY.
-                  // ██  Inline validators removed → snackbar used.
-                  // ══════════════════════════════════════════════
                   _buildSectionCard(
-                    title: "Basic Details",
-                    subtitle: "मूलभूत माहिती",
+                    title: AppStrings.get('basic_details', lang),
+                    subtitle: AppStrings.get('basic_details_sub', lang),
                     icon: Icons.person,
                     child: Column(
                       children: [
                         _buildTextField(
                           controller: _mukkadamNameController,
-                          label: "Mukkadam Name",
-                          subtitle: "मुक्कादम नाव",
-                          hint: "Enter full name",
+                          label: AppStrings.get('mukkadam_name', lang),
+                          hint: AppStrings.get('enter_full_name', lang),
                           icon: Icons.person_outline,
                           required: true,
                         ),
                         const SizedBox(height: 16),
                         _buildTextField(
                           controller: _mobileNumbersController,
-                          label: "Mobile Number",
-                          subtitle: "मोबाईल नंबर",
-                          hint: "10 digit mobile number",
+                          label: AppStrings.get('mobile_number', lang),
+                          hint: AppStrings.get('ten_digit_mobile', lang),
                           icon: Icons.phone_android,
                           keyboardType: TextInputType.phone,
                           maxLength: 10,
@@ -873,8 +821,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                   const SizedBox(height: 20),
 
                   _buildSectionCard(
-                    title: "Location Details",
-                    subtitle: "स्थान माहिती",
+                    title: AppStrings.get('location_details', lang),
+                    subtitle: AppStrings.get('location_details_sub', lang),
                     icon: Icons.location_on,
                     child: Column(
                       children: [
@@ -882,53 +830,57 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                           value: _selectedState,
                           items: _states,
                           displayKey: 'state_name_english',
-                          label: "State",
-                          hint: "Select State",
+                          label: AppStrings.get('state', lang),
+                          hint: AppStrings.get('select_state', lang),
                           icon: Icons.public,
                           onChanged: (val) {
                             setState(() => _selectedState = val);
                             if (val != null) _loadDistricts(val['state_code']);
                           },
                           required: true,
+                          lang: lang,
                         ),
                         const SizedBox(height: 16),
                         _buildSearchableDropdown(
                           value: _selectedDistrict,
                           items: _districts,
                           displayKey: 'districtnameenglish',
-                          label: "District",
-                          hint: "Select District",
+                          label: AppStrings.get('district', lang),
+                          hint: AppStrings.get('select_district', lang),
                           icon: Icons.map,
                           onChanged: (val) {
                             setState(() => _selectedDistrict = val);
                             if (val != null) _loadTalukas(_selectedState!['state_code'], val['districtcode'].toString());
                           },
                           required: true,
+                          lang: lang,
                         ),
                         const SizedBox(height: 16),
                         _buildSearchableDropdown(
                           value: _selectedTaluka,
                           items: _talukas,
                           displayKey: 'subdistrictnameenglish',
-                          label: "Taluka",
-                          hint: "Select Taluka",
+                          label: AppStrings.get('taluka', lang),
+                          hint: AppStrings.get('select_taluka', lang),
                           icon: Icons.location_city,
                           onChanged: (val) {
                             setState(() => _selectedTaluka = val);
                             if (val != null) _loadVillages(_selectedState!['state_code'], val['subdistrictcode'].toString());
                           },
                           required: true,
+                          lang: lang,
                         ),
                         const SizedBox(height: 16),
                         _buildSearchableDropdown(
                           value: _selectedVillage,
                           items: _villages,
                           displayKey: 'villagenameenglish',
-                          label: "Village / Residence",
-                          hint: "Select Village",
+                          label: AppStrings.get('village_residence', lang),
+                          hint: AppStrings.get('select_village', lang),
                           icon: Icons.home,
                           onChanged: (val) => setState(() => _selectedVillage = val),
                           required: true,
+                          lang: lang,
                         ),
                       ],
                     ),
@@ -936,14 +888,14 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                   const SizedBox(height: 20),
 
                   _buildSectionCard(
-                    title: "Smartphone Availability",
-                    subtitle: "स्मार्टफोन उपलब्धता",
+                    title: AppStrings.get('smartphone_availability', lang),
+                    subtitle: AppStrings.get('smartphone_availability_sub', lang),
                     icon: Icons.smartphone,
                     child: Row(
                       children: [
                         Expanded(
                           child: _buildRadioOption(
-                            title: 'Yes',
+                            title: AppStrings.get('yes', lang),
                             value: 'yes',
                             groupValue: _smartphoneAvailability,
                             onChanged: (val) => setState(() => _smartphoneAvailability = val!),
@@ -952,7 +904,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildRadioOption(
-                            title: 'No',
+                            title: AppStrings.get('no', lang),
                             value: 'no',
                             groupValue: _smartphoneAvailability,
                             onChanged: (val) => setState(() => _smartphoneAvailability = val!),
@@ -964,30 +916,30 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                   const SizedBox(height: 20),
 
                   _buildSectionCard(
-                    title: "Crew Details",
-                    subtitle: "टोळी माहिती",
+                    title: AppStrings.get('crew_details', lang),
+                    subtitle: AppStrings.get('crew_details_sub', lang),
                     icon: Icons.groups,
                     child: Column(
                       children: [
                         _buildTextField(
                           controller: _crewSizeController,
-                          label: "Current Crew Size",
+                          label: AppStrings.get('current_crew_size', lang),
                           hint: "e.g., 15",
                           icon: Icons.groups_outlined,
                           keyboardType: TextInputType.number,
-                          validator: (v) => (v == null || v.isEmpty) ? 'Crew size is required' : null,
+                          validator: (v) => (v == null || v.isEmpty) ? AppStrings.get('crew_size_required', lang) : null,
                           required: true,
                         ),
                         const SizedBox(height: 16),
                         _buildTextField(
                           controller: _maxCrewCapacityController,
-                          label: "Maximum Crew Capacity",
-                          hint: "Maximum number of workers",
+                          label: AppStrings.get('max_crew_capacity', lang),
+                          hint: AppStrings.get('max_workers', lang),
                           icon: Icons.group_add,
                           keyboardType: TextInputType.number,
                         ),
                         const SizedBox(height: 20),
-                        _buildLabel("Alternative Contact 1", isDark: isDark),
+                        _buildLabel(AppStrings.get('alternative_contact_1', lang), isDark: isDark),
                         const SizedBox(height: 8),
                         Row(
                           children: [
@@ -996,7 +948,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                               child: _buildTextField(
                                 controller: _altContact1NameController,
                                 label: "",
-                                hint: "Contact Name",
+                                hint: AppStrings.get('contact_name', lang),
                                 icon: Icons.person_outline,
                               ),
                             ),
@@ -1006,7 +958,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                               child: _buildTextField(
                                 controller: _altPhone1Controller,
                                 label: "",
-                                hint: "Phone Number",
+                                hint: AppStrings.get('phone_number', lang),
                                 icon: Icons.phone,
                                 keyboardType: TextInputType.phone,
                                 maxLength: 10,
@@ -1016,7 +968,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                           ],
                         ),
                         const SizedBox(height: 16),
-                        _buildLabel("Alternative Contact 2", isDark: isDark),
+                        _buildLabel(AppStrings.get('alternative_contact_2', lang), isDark: isDark),
                         const SizedBox(height: 8),
                         Row(
                           children: [
@@ -1025,7 +977,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                               child: _buildTextField(
                                 controller: _altContact2NameController,
                                 label: "",
-                                hint: "Contact Name",
+                                hint: AppStrings.get('contact_name', lang),
                                 icon: Icons.person_outline,
                               ),
                             ),
@@ -1035,7 +987,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                               child: _buildTextField(
                                 controller: _altPhone2Controller,
                                 label: "",
-                                hint: "Phone Number",
+                                hint: AppStrings.get('phone_number', lang),
                                 icon: Icons.phone,
                                 keyboardType: TextInputType.phone,
                                 maxLength: 10,
@@ -1050,8 +1002,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                   const SizedBox(height: 20),
 
                   _buildSectionCard(
-                    title: "Availability",
-                    subtitle: "उपलब्धता",
+                    title: AppStrings.get('availability', lang),
+                    subtitle: AppStrings.get('availability_sub', lang),
                     icon: Icons.event_available,
                     child: Column(
                       children: [
@@ -1063,10 +1015,10 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                                 child: AbsorbPointer(
                                   child: _buildTextField(
                                     controller: _startDateController,
-                                    label: "Start Date",
-                                    hint: "Select date",
+                                    label: AppStrings.get('start_date', lang),
+                                    hint: AppStrings.get('select_date', lang),
                                     icon: Icons.calendar_today,
-                                    validator: (v) => (v == null || v.isEmpty) ? 'Start date is required' : null,
+                                    validator: (v) => (v == null || v.isEmpty) ? AppStrings.get('start_date_required', lang) : null,
                                     required: true,
                                   ),
                                 ),
@@ -1079,8 +1031,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                                 child: AbsorbPointer(
                                   child: _buildTextField(
                                     controller: _endDateController,
-                                    label: "End Date",
-                                    hint: "Select date",
+                                    label: AppStrings.get('end_date', lang),
+                                    hint: AppStrings.get('select_date', lang),
                                     icon: Icons.calendar_today,
                                   ),
                                 ),
@@ -1098,8 +1050,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                             ),
                           ),
                           child: CheckboxListTile(
-                            title: const Text("Is Permanent", style: TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: const Text("Available year-round", style: TextStyle(fontSize: 12)),
+                            title: Text(AppStrings.get('is_permanent', lang), style: const TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: Text(AppStrings.get('available_year_round', lang), style: const TextStyle(fontSize: 12)),
                             value: _isPermanent,
                             activeColor: _primaryColor,
                             onChanged: (val) => setState(() => _isPermanent = val!),
@@ -1113,37 +1065,39 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                   const SizedBox(height: 20),
 
                   _buildSectionCard(
-                    title: "Location & Photo Capture",
-                    subtitle: "स्थान आणि फोटो",
+                    title: AppStrings.get('location_photo_capture', lang),
+                    subtitle: AppStrings.get('location_photo_capture_sub', lang),
                     icon: Icons.add_a_photo,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel("GPS Coordinates (Auto-captured) *", isDark: isDark, required: true),
+                        _buildLabel(AppStrings.get('gps_coordinates', lang), isDark: isDark, required: true),
                         const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
                               child: _buildReadOnlyTextField(
                                 controller: _latController,
-                                label: "Latitude",
+                                label: AppStrings.get('latitude', lang),
                                 icon: Icons.my_location,
                                 isDark: isDark,
+                                lang: lang,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: _buildReadOnlyTextField(
                                 controller: _longController,
-                                label: "Longitude",
+                                label: AppStrings.get('longitude', lang),
                                 icon: Icons.location_searching,
                                 isDark: isDark,
+                                lang: lang,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 20),
-                        _buildLabel("Capture Location Photo *", isDark: isDark, required: true),
+                        _buildLabel(AppStrings.get('capture_location_photo', lang), isDark: isDark, required: true),
                         const SizedBox(height: 8),
                         GestureDetector(
                           onTap: showImagePickerOptionsWithLocationCheck,
@@ -1169,15 +1123,11 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                                     color: _primaryColor.withOpacity(0.1),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
-                                    Icons.add_a_photo,
-                                    size: 48,
-                                    color: _primaryColor,
-                                  ),
+                                  child: const Icon(Icons.add_a_photo, size: 48, color: _primaryColor),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  "Tap to capture photo *",
+                                  AppStrings.get('tap_to_capture', lang),
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -1220,12 +1170,8 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                                         const Icon(Icons.check_circle, color: Colors.white, size: 16),
                                         const SizedBox(width: 4),
                                         Text(
-                                          "Captured",
-                                          style: GoogleFonts.inter(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          AppStrings.get('captured', lang),
+                                          style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                                         ),
                                       ],
                                     ),
@@ -1241,152 +1187,82 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                   const SizedBox(height: 20),
 
                   _buildSectionCard(
-                    title: "Transport Mode",
-                    subtitle: "वाहतूक साधन",
+                    title: AppStrings.get('transport_mode', lang),
+                    subtitle: AppStrings.get('transport_mode_sub', lang),
                     icon: Icons.directions_car,
                     child: Column(
                       children: [
-                        _buildRadioListOption(
-                          title: 'Own Bike',
-                          value: 'own_bike',
-                          groupValue: _transportMode,
-                          icon: Icons.two_wheeler,
-                          onChanged: (val) => setState(() => _transportMode = val!),
-                          isDark: isDark,
-                        ),
+                        _buildRadioListOption(title: AppStrings.get('own_bike', lang), value: 'own_bike', groupValue: _transportMode, icon: Icons.two_wheeler, onChanged: (val) => setState(() => _transportMode = val!), isDark: isDark),
                         const SizedBox(height: 8),
-                        _buildRadioListOption(
-                          title: 'Own Pickup',
-                          value: 'own_pickup',
-                          groupValue: _transportMode,
-                          icon: Icons.local_shipping,
-                          onChanged: (val) => setState(() => _transportMode = val!),
-                          isDark: isDark,
-                        ),
+                        _buildRadioListOption(title: AppStrings.get('own_pickup', lang), value: 'own_pickup', groupValue: _transportMode, icon: Icons.local_shipping, onChanged: (val) => setState(() => _transportMode = val!), isDark: isDark),
                         const SizedBox(height: 8),
-                        _buildRadioListOption(
-                          title: 'No Vehicle',
-                          value: 'no_vehicle',
-                          groupValue: _transportMode,
-                          icon: Icons.directions_walk,
-                          onChanged: (val) => setState(() => _transportMode = val!),
-                          isDark: isDark,
-                        ),
+                        _buildRadioListOption(title: AppStrings.get('no_vehicle', lang), value: 'no_vehicle', groupValue: _transportMode, icon: Icons.directions_walk, onChanged: (val) => setState(() => _transportMode = val!), isDark: isDark),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
 
                   _buildSectionCard(
-                    title: "Notification Preferences",
-                    subtitle: "सूचना प्राधान्ये",
+                    title: AppStrings.get('notification_preferences', lang),
+                    subtitle: AppStrings.get('notification_preferences_sub', lang),
                     icon: Icons.notifications_active,
                     child: Column(
                       children: [
-                        _buildCheckboxOption(
-                          title: 'WhatsApp',
-                          subtitle: 'Receive updates on WhatsApp',
-                          icon: Icons.message,
-                          value: _whatsappNotification,
-                          onChanged: (val) => setState(() => _whatsappNotification = val!),
-                          isDark: isDark,
-                        ),
+                        _buildCheckboxOption(title: AppStrings.get('whatsapp', lang), subtitle: AppStrings.get('receive_updates_whatsapp', lang), icon: Icons.message, value: _whatsappNotification, onChanged: (val) => setState(() => _whatsappNotification = val!), isDark: isDark),
                         const SizedBox(height: 8),
-                        _buildCheckboxOption(
-                          title: 'SMS',
-                          subtitle: 'Receive updates via SMS',
-                          icon: Icons.sms,
-                          value: _smsNotification,
-                          onChanged: (val) => setState(() => _smsNotification = val!),
-                          isDark: isDark,
-                        ),
+                        _buildCheckboxOption(title: AppStrings.get('sms', lang), subtitle: AppStrings.get('receive_updates_sms', lang), icon: Icons.sms, value: _smsNotification, onChanged: (val) => setState(() => _smsNotification = val!), isDark: isDark),
                         const SizedBox(height: 8),
-                        _buildCheckboxOption(
-                          title: 'Phone Call',
-                          subtitle: 'Receive updates via phone call',
-                          icon: Icons.phone,
-                          value: _callNotification,
-                          onChanged: (val) => setState(() => _callNotification = val!),
-                          isDark: isDark,
-                        ),
+                        _buildCheckboxOption(title: AppStrings.get('phone_call', lang), subtitle: AppStrings.get('receive_updates_call', lang), icon: Icons.phone, value: _callNotification, onChanged: (val) => setState(() => _callNotification = val!), isDark: isDark),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
 
                   _buildSectionCard(
-                    title: "Documents & ID",
-                    subtitle: "कागदपत्रे आणि ओळखपत्र",
+                    title: AppStrings.get('documents_id', lang),
+                    subtitle: AppStrings.get('documents_id_sub', lang),
                     icon: Icons.badge,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel("Profile Photo *", isDark: isDark, required: true),
+                        _buildLabel(AppStrings.get('profile_photo', lang), isDark: isDark, required: true),
                         const SizedBox(height: 8),
-                        _buildDocumentUploadCard('Profile Photo', 'profile', _profilePhoto, isDark),
+                        _buildDocumentUploadCard(AppStrings.get('profile_photo_label', lang), 'profile', _profilePhoto, isDark, lang),
                         const SizedBox(height: 24),
 
-                        _buildSubsectionHeader("Voter Details", isDark),
+                        _buildSubsectionHeader(AppStrings.get('voter_details', lang), isDark),
                         const SizedBox(height: 12),
-                        _buildTextField(
-                          controller: _voterIdNumberController,
-                          label: "",
-                          hint: "Enter Voter ID (e.g., ABC1234567)",
-                          icon: Icons.how_to_vote,
-                          maxLength: 10,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                            UpperCaseTextFormatter(),
-                          ],
-                        ),
+                        _buildTextField(controller: _voterIdNumberController, label: "", hint: AppStrings.get('enter_voter_id', lang), icon: Icons.how_to_vote, maxLength: 10, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')), UpperCaseTextFormatter()]),
                         const SizedBox(height: 24),
 
-                        _buildSubsectionHeader("Aadhar Details", isDark),
+                        _buildSubsectionHeader(AppStrings.get('aadhar_details', lang), isDark),
                         const SizedBox(height: 12),
-                        _buildTextField(
-                          controller: _aadharNumberController,
-                          label: "",
-                          hint: "Enter 12-digit Aadhar Number",
-                          icon: Icons.credit_card,
-                          keyboardType: TextInputType.number,
-                          maxLength: 12,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        ),
+                        _buildTextField(controller: _aadharNumberController, label: "", hint: AppStrings.get('enter_aadhar', lang), icon: Icons.credit_card, keyboardType: TextInputType.number, maxLength: 12, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
                         const SizedBox(height: 12),
-                        _buildOrDivider(isDark),
+                        _buildOrDivider(isDark, lang),
                         const SizedBox(height: 12),
-                        _buildDocumentUploadCard('Aadhar Card', 'aadhar', _aadharCardPhoto, isDark),
+                        _buildDocumentUploadCard(AppStrings.get('aadhar_card', lang), 'aadhar', _aadharCardPhoto, isDark, lang),
                         const SizedBox(height: 24),
 
-                        _buildSubsectionHeader("PAN Details", isDark),
+                        _buildSubsectionHeader(AppStrings.get('pan_details', lang), isDark),
                         const SizedBox(height: 12),
-                        _buildTextField(
-                          controller: _panNumberController,
-                          label: "",
-                          hint: "Enter PAN (e.g., ABCDE1234F)",
-                          icon: Icons.credit_card,
-                          maxLength: 10,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                            UpperCaseTextFormatter(),
-                          ],
-                        ),
+                        _buildTextField(controller: _panNumberController, label: "", hint: AppStrings.get('enter_pan', lang), icon: Icons.credit_card, maxLength: 10, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')), UpperCaseTextFormatter()]),
                         const SizedBox(height: 12),
-                        _buildOrDivider(isDark),
+                        _buildOrDivider(isDark, lang),
                         const SizedBox(height: 12),
-                        _buildDocumentUploadCard('PAN Card', 'pan', _panCardPhoto, isDark),
+                        _buildDocumentUploadCard(AppStrings.get('pan_card', lang), 'pan', _panCardPhoto, isDark, lang),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
 
-                  _buildRateCardSection(isDark),
+                  _buildRateCardSection(isDark, lang),
                   const SizedBox(height: 30),
 
-                  _buildKharadTenderRatesSection(isDark),
+                  _buildKharadTenderRatesSection(isDark, lang),
                   const SizedBox(height: 20),
 
-                  _buildSubmitButton(isDark),
+                  _buildSubmitButton(isDark, lang),
                   const SizedBox(height: 30),
                 ],
               ),
@@ -1405,18 +1281,11 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const CircularProgressIndicator(
-                        color: _primaryColor,
-                        strokeWidth: 4,
-                      ),
+                      const CircularProgressIndicator(color: _primaryColor, strokeWidth: 4),
                       const SizedBox(height: 16),
                       Text(
-                        'Please wait...',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : _textPrimary,
-                        ),
+                        AppStrings.get('please_wait', lang),
+                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _textPrimary),
                       ),
                     ],
                   ),
@@ -1428,7 +1297,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     );
   }
 
-  Widget _buildKharadTenderRatesSection(bool isDark) {
+  Widget _buildKharadTenderRatesSection(bool isDark, String lang) {
     final hasActivity = _hasAnyTenderActivity();
 
     return Container(
@@ -1436,14 +1305,7 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
         color: isDark ? const Color(0xFF1E293B) : _cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF334155) : _borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03),
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03), spreadRadius: 0, blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -1454,178 +1316,73 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
             childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             leading: Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
+              decoration: BoxDecoration(color: _primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
               child: const Icon(Icons.assignment, color: _primaryColor, size: 24),
             ),
-            title: Text(
-              'Kharad Tender Rates',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : _textPrimary,
-                letterSpacing: -0.3,
-              ),
-            ),
-            subtitle: Text(
-              'खराद टेंडर दर - Optional',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: isDark ? Colors.grey[400] : _textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            title: Text(AppStrings.get('kharad_tender_rates', lang), style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : _textPrimary, letterSpacing: -0.3)),
+            subtitle: Text(AppStrings.get('kharad_tender_rates_sub', lang), style: GoogleFonts.inter(fontSize: 12, color: isDark ? Colors.grey[400] : _textSecondary, fontWeight: FontWeight.w600)),
             initiallyExpanded: false,
             children: [
               const SizedBox(height: 10),
-
-              // ── Reference Image Banner (Responsive) ──
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF172554) : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF1E40AF) : const Color(0xFFBFDBFE),
-                  ),
+                  border: Border.all(color: isDark ? const Color(0xFF1E40AF) : const Color(0xFFBFDBFE)),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: _rateCardImageBytes != null
-                      ? Image.memory(
-                    Uint8List.fromList(_rateCardImageBytes!),
-                    width: double.infinity,
-                    fit: BoxFit.contain,
-                  )
+                      ? Image.memory(Uint8List.fromList(_rateCardImageBytes!), width: double.infinity, fit: BoxFit.contain)
                       : Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.photo_camera,
-                          size: 24,
-                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6),
-                        ),
+                        Icon(Icons.photo_camera, size: 24, color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6)),
                         const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            '📷 Loading standard rates reference image...',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF),
-                            ),
-                          ),
-                        ),
+                        Expanded(child: Text('📷 ${AppStrings.get('loading_rate_card', lang)}', style: TextStyle(fontSize: 13, color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF)))),
                         const SizedBox(width: 8),
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: isDark ? const Color(0xFF60A5FA) : _accentColor,
-                          ),
-                        ),
+                        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: isDark ? const Color(0xFF60A5FA) : _accentColor)),
                       ],
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // ── Static Tender Activities (10 fixed rows) ──
               ...List.generate(_tenderActivityNames.length, (index) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Serial Number
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: _primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${index + 1}',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: _primaryColor,
-                            ),
-                          ),
-                        ),
-                      ),
+                      Container(width: 28, height: 28, decoration: BoxDecoration(color: _primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Center(child: Text('${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: _primaryColor)))),
                       const SizedBox(width: 8),
-                      // Activity Name (read-only label)
                       Expanded(
                         flex: 3,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF0F172A).withOpacity(0.5) : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF334155) : _borderColor,
-                            ),
-                          ),
-                          child: Text(
-                            _tenderActivityNames[index],
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : _textPrimary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A).withOpacity(0.5) : Colors.grey[100], borderRadius: BorderRadius.circular(10), border: Border.all(color: isDark ? const Color(0xFF334155) : _borderColor)),
+                          child: Text(_tenderActivityNames[index], style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Price (editable)
                       Expanded(
                         flex: 2,
                         child: TextFormField(
                           controller: _tenderPriceControllers[index],
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                          ],
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: isDark ? Colors.white : _textPrimary,
-                          ),
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+                          style: GoogleFonts.inter(fontSize: 14, color: isDark ? Colors.white : _textPrimary),
                           decoration: InputDecoration(
-                            hintText: 'Price',
-                            hintStyle: TextStyle(
-                              color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.6),
-                              fontSize: 13,
-                            ),
+                            hintText: AppStrings.get('price', lang),
+                            hintStyle: TextStyle(color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.6), fontSize: 13),
                             prefixIcon: const Icon(Icons.currency_rupee, size: 16, color: _primaryColor),
-                            filled: true,
-                            fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(
-                                color: isDark ? const Color(0xFF334155) : _borderColor,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(
-                                color: isDark ? const Color(0xFF334155) : _borderColor,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: _accentColor, width: 1.5),
-                            ),
+                            filled: true, fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _accentColor, width: 1.5)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                           ),
                         ),
@@ -1635,63 +1392,30 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
                 );
               }),
               const SizedBox(height: 16),
-
-              // ── Total Price (Mandatory if any price is filled) ──
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   RichText(
                     text: TextSpan(
-                      text: 'Total Price ',
-                      style: GoogleFonts.inter(
-                        color: isDark ? Colors.grey[300] : _textSecondary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      children: [
-                        if (hasActivity)
-                          const TextSpan(
-                            text: '*',
-                            style: TextStyle(color: _errorColor, fontWeight: FontWeight.bold),
-                          ),
-                      ],
+                      text: '${AppStrings.get('total_price', lang)} ',
+                      style: GoogleFonts.inter(color: isDark ? Colors.grey[300] : _textSecondary, fontSize: 14, fontWeight: FontWeight.w600),
+                      children: [if (hasActivity) const TextSpan(text: '*', style: TextStyle(color: _errorColor, fontWeight: FontWeight.bold))],
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _tenderTotalPriceController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                    ],
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      color: isDark ? Colors.white : _textPrimary,
-                    ),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+                    style: GoogleFonts.inter(fontSize: 15, color: isDark ? Colors.white : _textPrimary),
                     decoration: InputDecoration(
-                      hintText: 'Total tender price',
-                      hintStyle: TextStyle(
-                        color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.6),
-                      ),
+                      hintText: AppStrings.get('total_tender_price', lang),
+                      hintStyle: TextStyle(color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.6)),
                       prefixIcon: const Icon(Icons.currency_rupee, color: _primaryColor, size: 22),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: isDark ? const Color(0xFF334155) : _borderColor,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: isDark ? const Color(0xFF334155) : _borderColor,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: _accentColor, width: 2),
-                      ),
+                      filled: true, fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _accentColor, width: 2)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     ),
                   ),
@@ -1704,69 +1428,22 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     );
   }
 
-  Widget _buildSectionCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Widget child,
-  }) {
+  Widget _buildSectionCard({required String title, required String subtitle, required IconData icon, required Widget child}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : _cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF334155) : _borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03),
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : _cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF334155) : _borderColor), boxShadow: [BoxShadow(color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03), spreadRadius: 0, blurRadius: 10, offset: const Offset(0, 2))]),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: _primaryColor, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: isDark ? Colors.white : _textPrimary,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: isDark ? Colors.grey[400] : _textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          Row(children: [
+            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: _primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: _primaryColor, size: 24)),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : _textPrimary, letterSpacing: -0.3)),
+              Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: isDark ? Colors.grey[400] : _textSecondary, fontWeight: FontWeight.w600)),
+            ])),
+          ]),
           const SizedBox(height: 20),
           child,
         ],
@@ -1776,410 +1453,122 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
 
   Widget _buildLabel(String text, {bool required = false, required bool isDark}) {
     return RichText(
-      text: TextSpan(
-        text: text,
-        style: GoogleFonts.inter(
-          color: isDark ? Colors.grey[300] : _textSecondary,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+      text: TextSpan(text: text, style: GoogleFonts.inter(color: isDark ? Colors.grey[300] : _textSecondary, fontSize: 14, fontWeight: FontWeight.w600), children: [if (required) const TextSpan(text: ' *', style: TextStyle(color: _errorColor, fontWeight: FontWeight.bold))]),
+    );
+  }
+
+  Widget _buildTextField({required TextEditingController controller, required String label, required String hint, required IconData icon, TextInputType keyboardType = TextInputType.text, String? Function(String?)? validator, bool required = false, int? maxLength, List<TextInputFormatter>? inputFormatters, String? subtitle}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (label.isNotEmpty) Padding(padding: EdgeInsets.only(bottom: subtitle != null ? 2 : 8), child: _buildLabel(label, required: required, isDark: isDark)),
+      if (subtitle != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(subtitle, style: GoogleFonts.inter(fontSize: 13, color: isDark ? Colors.grey[400] : _textSecondary, fontWeight: FontWeight.w600))),
+      TextFormField(
+        controller: controller, keyboardType: keyboardType, validator: validator, maxLength: maxLength, inputFormatters: inputFormatters,
+        style: GoogleFonts.inter(fontSize: 15, color: isDark ? Colors.white : _textPrimary),
+        decoration: InputDecoration(
+          hintText: hint, hintStyle: TextStyle(color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.6)),
+          prefixIcon: Icon(icon, color: _primaryColor, size: 22), counterText: "",
+          filled: true, fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _accentColor, width: 2)),
+          errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _errorColor, width: 1.5)),
+          focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _errorColor, width: 2)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
-        children: [
-          if (required)
-            const TextSpan(
-              text: ' *',
-              style: TextStyle(color: _errorColor, fontWeight: FontWeight.bold),
-            ),
-        ],
       ),
-    );
+    ]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ██  CHANGED: Added optional `subtitle` parameter for Marathi
-  // ══════════════════════════════════════════════════════════════
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-    bool required = false,
-    int? maxLength,
-    List<TextInputFormatter>? inputFormatters,
-    String? subtitle,
-  }) {
+  Widget _buildReadOnlyTextField({required TextEditingController controller, required String label, required IconData icon, required bool isDark, required String lang}) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.grey[400] : _textSecondary)),
+      const SizedBox(height: 8),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A).withOpacity(0.5) : _dividerColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : _borderColor)),
+        child: Row(children: [
+          Icon(icon, color: _textSecondary, size: 20), const SizedBox(width: 10),
+          Expanded(child: Text(controller.text.isEmpty ? AppStrings.get('auto_captured', lang) : controller.text)),
+          if (controller.text.isNotEmpty) Icon(Icons.lock_outline, color: _textSecondary, size: 16),
+        ]),
+      ),
+    ]);
+  }
+
+  Widget _buildSearchableDropdown({required Map<String, dynamic>? value, required List<Map<String, dynamic>> items, required String displayKey, required String label, required String hint, required IconData icon, required void Function(Map<String, dynamic>?) onChanged, bool required = false, required String lang}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (label.isNotEmpty)
-          Padding(
-            padding: EdgeInsets.only(bottom: subtitle != null ? 2 : 8),
-            child: _buildLabel(label, required: required, isDark: isDark),
-          ),
-        if (subtitle != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              subtitle,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: isDark ? Colors.grey[400] : _textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          validator: validator,
-          maxLength: maxLength,
-          inputFormatters: inputFormatters,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            color: isDark ? Colors.white : _textPrimary,
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.6)),
-            prefixIcon: Icon(icon, color: _primaryColor, size: 22),
-            counterText: "",
-            filled: true,
-            fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: _accentColor, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: _errorColor, width: 1.5),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: _errorColor, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (label.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 8), child: _buildLabel(label, required: required, isDark: isDark)),
+      DropdownSearch<Map<String, dynamic>>(
+        items: (filter, loadProps) => items, selectedItem: value, itemAsString: (item) => item[displayKey]?.toString() ?? '', onChanged: onChanged,
+        compareFn: (item1, item2) => item1[displayKey] == item2[displayKey],
+        filterFn: (item, filter) => item[displayKey].toString().toLowerCase().contains(filter.toLowerCase()),
+        decoratorProps: DropDownDecoratorProps(decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: _primaryColor, size: 22), hintText: hint,
+          hintStyle: TextStyle(color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.6)),
+          filled: true, fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _accentColor, width: 2)),
+          errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _errorColor, width: 1.5)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        )),
+        popupProps: PopupProps.menu(
+          showSearchBox: true,
+          searchFieldProps: TextFieldProps(decoration: InputDecoration(hintText: AppStrings.get('search', lang), prefixIcon: const Icon(Icons.search), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+          menuProps: MenuProps(backgroundColor: isDark ? const Color(0xFF1E293B) : _cardColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
         ),
-      ],
-    );
+        validator: (v) => (required && v == null) ? AppStrings.get('field_required', lang) : null,
+      ),
+    ]);
   }
 
-  Widget _buildReadOnlyTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required bool isDark,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.grey[400] : _textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F172A).withOpacity(0.5) : _dividerColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? const Color(0xFF334155) : _borderColor,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: _textSecondary, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  controller.text.isEmpty ? 'Auto-captured' : controller.text,
-                ),
-              ),
-              if (controller.text.isNotEmpty)
-                Icon(Icons.lock_outline, color: _textSecondary, size: 16),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSearchableDropdown({
-    required Map<String, dynamic>? value,
-    required List<Map<String, dynamic>> items,
-    required String displayKey,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required void Function(Map<String, dynamic>?) onChanged,
-    bool required = false,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (label.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _buildLabel(label, required: required, isDark: isDark),
-          ),
-        DropdownSearch<Map<String, dynamic>>(
-          items: (filter, loadProps) => items,
-          selectedItem: value,
-          itemAsString: (item) => item[displayKey]?.toString() ?? '',
-          onChanged: onChanged,
-          compareFn: (item1, item2) => item1[displayKey] == item2[displayKey],
-          filterFn: (item, filter) => item[displayKey].toString().toLowerCase().contains(filter.toLowerCase()),
-          decoratorProps: DropDownDecoratorProps(
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: _primaryColor, size: 22),
-              hintText: hint,
-              hintStyle: TextStyle(color: isDark ? Colors.grey[500] : _textSecondary.withOpacity(0.6)),
-              filled: true,
-              fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: _accentColor, width: 2),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: _errorColor, width: 1.5),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-          ),
-          popupProps: PopupProps.menu(
-            showSearchBox: true,
-            searchFieldProps: TextFieldProps(
-              decoration: InputDecoration(
-                hintText: "Search...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-            menuProps: MenuProps(
-              backgroundColor: isDark ? const Color(0xFF1E293B) : _cardColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-          validator: (v) => (required && v == null) ? 'This field is required' : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRadioOption({
-    required String title,
-    required String value,
-    required String groupValue,
-    required void Function(String?) onChanged,
-  }) {
+  Widget _buildRadioOption({required String title, required String value, required String groupValue, required void Function(String?) onChanged}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = value == groupValue;
-
     return GestureDetector(
       onTap: () => onChanged(value),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? _primaryColor.withOpacity(0.1)
-              : (isDark ? const Color(0xFF0F172A) : _dividerColor),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? _primaryColor : (isDark ? const Color(0xFF334155) : _borderColor),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? _primaryColor : Colors.grey[400]!,
-                  width: 2,
-                ),
-                color: isSelected ? _primaryColor : Colors.transparent,
-              ),
-              child: isSelected
-                  ? const Center(
-                child: CircleAvatar(radius: 4, backgroundColor: Colors.white),
-              )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? _primaryColor : (isDark ? Colors.grey[300] : _textPrimary),
-              ),
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(color: isSelected ? _primaryColor.withOpacity(0.1) : (isDark ? const Color(0xFF0F172A) : _dividerColor), borderRadius: BorderRadius.circular(12), border: Border.all(color: isSelected ? _primaryColor : (isDark ? const Color(0xFF334155) : _borderColor), width: isSelected ? 2 : 1)),
+        child: Row(children: [
+          Container(width: 20, height: 20, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: isSelected ? _primaryColor : Colors.grey[400]!, width: 2), color: isSelected ? _primaryColor : Colors.transparent), child: isSelected ? const Center(child: CircleAvatar(radius: 4, backgroundColor: Colors.white)) : null),
+          const SizedBox(width: 12),
+          Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? _primaryColor : (isDark ? Colors.grey[300] : _textPrimary))),
+        ]),
       ),
     );
   }
 
-  Widget _buildRadioListOption({
-    required String title,
-    required String value,
-    required String groupValue,
-    required IconData icon,
-    required void Function(String?) onChanged,
-    required bool isDark,
-  }) {
+  Widget _buildRadioListOption({required String title, required String value, required String groupValue, required IconData icon, required void Function(String?) onChanged, required bool isDark}) {
     final isSelected = value == groupValue;
-
     return GestureDetector(
       onTap: () => onChanged(value),
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? _primaryColor.withOpacity(0.1)
-              : (isDark ? const Color(0xFF0F172A) : _dividerColor),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? _primaryColor : (isDark ? const Color(0xFF334155) : _borderColor),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? _primaryColor.withOpacity(0.2)
-                    : (isDark ? const Color(0xFF1E293B) : Colors.grey[100]),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: isSelected ? _primaryColor : _textSecondary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? _primaryColor : (isDark ? Colors.grey[300] : _textPrimary),
-                ),
-              ),
-            ),
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? _primaryColor : Colors.grey[400]!,
-                  width: 2,
-                ),
-                color: isSelected ? _primaryColor : Colors.transparent,
-              ),
-              child: isSelected
-                  ? const Center(
-                child: CircleAvatar(radius: 5, backgroundColor: Colors.white),
-              )
-                  : null,
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(color: isSelected ? _primaryColor.withOpacity(0.1) : (isDark ? const Color(0xFF0F172A) : _dividerColor), borderRadius: BorderRadius.circular(12), border: Border.all(color: isSelected ? _primaryColor : (isDark ? const Color(0xFF334155) : _borderColor), width: isSelected ? 2 : 1)),
+        child: Row(children: [
+          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: isSelected ? _primaryColor.withOpacity(0.2) : (isDark ? const Color(0xFF1E293B) : Colors.grey[100]), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: isSelected ? _primaryColor : _textSecondary, size: 20)),
+          const SizedBox(width: 12),
+          Expanded(child: Text(title, style: GoogleFonts.inter(fontSize: 15, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? _primaryColor : (isDark ? Colors.grey[300] : _textPrimary)))),
+          Container(width: 22, height: 22, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: isSelected ? _primaryColor : Colors.grey[400]!, width: 2), color: isSelected ? _primaryColor : Colors.transparent), child: isSelected ? const Center(child: CircleAvatar(radius: 5, backgroundColor: Colors.white)) : null),
+        ]),
       ),
     );
   }
 
-  Widget _buildCheckboxOption({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool value,
-    required void Function(bool?) onChanged,
-    required bool isDark,
-  }) {
+  Widget _buildCheckboxOption({required String title, required String subtitle, required IconData icon, required bool value, required void Function(bool?) onChanged, required bool isDark}) {
     return Container(
-      decoration: BoxDecoration(
-        color: value
-            ? _primaryColor.withOpacity(0.1)
-            : (isDark ? const Color(0xFF0F172A) : _dividerColor),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: value ? _primaryColor : (isDark ? const Color(0xFF334155) : _borderColor),
-          width: value ? 2 : 1,
-        ),
-      ),
+      decoration: BoxDecoration(color: value ? _primaryColor.withOpacity(0.1) : (isDark ? const Color(0xFF0F172A) : _dividerColor), borderRadius: BorderRadius.circular(12), border: Border.all(color: value ? _primaryColor : (isDark ? const Color(0xFF334155) : _borderColor), width: value ? 2 : 1)),
       child: CheckboxListTile(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: value
-                    ? _primaryColor.withOpacity(0.2)
-                    : (isDark ? const Color(0xFF1E293B) : Colors.grey[100]),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                icon,
-                color: value ? _primaryColor : _textSecondary,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: value ? FontWeight.w600 : FontWeight.w500,
-                color: value ? _primaryColor : null,
-              ),
-            ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(left: 42),
-          child: Text(
-            subtitle,
-            style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : _textSecondary),
-          ),
-        ),
-        value: value,
-        activeColor: _primaryColor,
-        onChanged: onChanged,
+        title: Row(children: [
+          Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: value ? _primaryColor.withOpacity(0.2) : (isDark ? const Color(0xFF1E293B) : Colors.grey[100]), borderRadius: BorderRadius.circular(6)), child: Icon(icon, color: value ? _primaryColor : _textSecondary, size: 18)),
+          const SizedBox(width: 12),
+          Text(title, style: TextStyle(fontWeight: value ? FontWeight.w600 : FontWeight.w500, color: value ? _primaryColor : null)),
+        ]),
+        subtitle: Padding(padding: const EdgeInsets.only(left: 42), child: Text(subtitle, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : _textSecondary))),
+        value: value, activeColor: _primaryColor, onChanged: onChanged,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         controlAffinity: ListTileControlAffinity.trailing,
@@ -2187,156 +1576,49 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
     );
   }
 
-  Widget _buildDocumentUploadCard(String label, String documentType, File? file, bool isDark) {
+  Widget _buildDocumentUploadCard(String label, String documentType, File? file, bool isDark, String lang) {
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : _dividerColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: file != null ? _successColor : (isDark ? const Color(0xFF334155) : _borderColor),
-          width: file != null ? 2 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => _showDocumentPickerOptions(documentType),
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: file != null
-                              ? _successColor.withOpacity(0.1)
-                              : _primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          file != null ? Icons.check_circle : Icons.upload_file,
-                          color: file != null ? _successColor : _primaryColor,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              file == null ? 'Upload $label' : '$label Uploaded',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: file != null ? _successColor : (isDark ? Colors.white : _textPrimary),
-                              ),
-                            ),
-                            if (file == null)
-                              Text(
-                                'Tap to select',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark ? Colors.grey[500] : _textSecondary,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 50,
-            color: isDark ? const Color(0xFF334155) : _borderColor,
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _pickDocumentImage(ImageSource.camera, documentType),
-              borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: _primaryColor,
-                  size: 24,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : _dividerColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: file != null ? _successColor : (isDark ? const Color(0xFF334155) : _borderColor), width: file != null ? 2 : 1)),
+      child: Row(children: [
+        Expanded(child: Material(color: Colors.transparent, child: InkWell(
+          onTap: () => _showDocumentPickerOptions(documentType), borderRadius: BorderRadius.circular(12),
+          child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
+            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: file != null ? _successColor.withOpacity(0.1) : _primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(file != null ? Icons.check_circle : Icons.upload_file, color: file != null ? _successColor : _primaryColor, size: 24)),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(file == null ? '${AppStrings.get('upload', lang)} $label' : '$label ${AppStrings.get('uploaded', lang)}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: file != null ? _successColor : (isDark ? Colors.white : _textPrimary))),
+              if (file == null) Text(AppStrings.get('tap_to_select', lang), style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[500] : _textSecondary)),
+            ])),
+          ])),
+        ))),
+        Container(width: 1, height: 50, color: isDark ? const Color(0xFF334155) : _borderColor),
+        Material(color: Colors.transparent, child: InkWell(onTap: () => _pickDocumentImage(ImageSource.camera, documentType), borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)), child: Container(padding: const EdgeInsets.all(16), child: const Icon(Icons.camera_alt, color: _primaryColor, size: 24)))),
+      ]),
     );
   }
 
   Widget _buildSubsectionHeader(String title, bool isDark) {
-    return Row(
-      children: [
-        Container(
-          width: 4,
-          height: 20,
-          decoration: BoxDecoration(
-            color: _primaryColor,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : _textPrimary,
-          ),
-        ),
-      ],
-    );
+    return Row(children: [
+      Container(width: 4, height: 20, decoration: BoxDecoration(color: _primaryColor, borderRadius: BorderRadius.circular(2))),
+      const SizedBox(width: 8),
+      Text(title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: isDark ? Colors.white : _textPrimary)),
+    ]);
   }
 
-  Widget _buildOrDivider(bool isDark) {
-    return Row(
-      children: [
-        Expanded(child: Divider(color: isDark ? const Color(0xFF334155) : _borderColor)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'OR',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.grey[500] : _textSecondary,
-            ),
-          ),
-        ),
-        Expanded(child: Divider(color: isDark ? const Color(0xFF334155) : _borderColor)),
-      ],
-    );
+  Widget _buildOrDivider(bool isDark, String lang) {
+    return Row(children: [
+      Expanded(child: Divider(color: isDark ? const Color(0xFF334155) : _borderColor)),
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text(AppStrings.get('or', lang), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[500] : _textSecondary))),
+      Expanded(child: Divider(color: isDark ? const Color(0xFF334155) : _borderColor)),
+    ]);
   }
 
-  Widget _buildRateCardSection(bool isDark) {
+  // ═══════════════════════════════════════════════════════════════
+  // UPDATED: _buildRateCardSection now passes lang to _buildRateCardGrid
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildRateCardSection(bool isDark, String lang) {
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : _cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF334155) : _borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03),
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : _cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF334155) : _borderColor), boxShadow: [BoxShadow(color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03), spreadRadius: 0, blurRadius: 10, offset: const Offset(0, 2))]),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Theme(
@@ -2344,204 +1626,90 @@ class _QuickMukkadamRegistrationScreenState extends State<QuickMukkadamRegistrat
           child: ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            leading: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.currency_rupee, color: _primaryColor, size: 24),
-            ),
-            title: Text(
-              'Rate Card Details',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : _textPrimary,
-                letterSpacing: -0.3,
-              ),
-            ),
-            subtitle: Text(
-              'दर कार्ड तपशील - Optional',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: isDark ? Colors.grey[400] : _textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: _primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.currency_rupee, color: _primaryColor, size: 24)),
+            title: Text(AppStrings.get('rate_card_details', lang), style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : _textPrimary, letterSpacing: -0.3)),
+            subtitle: Text(AppStrings.get('rate_card_details_sub', lang), style: GoogleFonts.inter(fontSize: 12, color: isDark ? Colors.grey[400] : _textSecondary, fontWeight: FontWeight.w600)),
             initiallyExpanded: false,
-            children: [
-              const SizedBox(height: 10),
-              _buildRateCardGrid(isDark),
-            ],
+            children: [const SizedBox(height: 10), _buildRateCardGrid(isDark, lang)],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildRateCardGrid(bool isDark) {
-    return Column(
-      children: [
-        _buildTwoFieldRow(defaultRateController, 'Default Rate', pruningController, 'Pruning', isDark),
-        _buildTwoFieldRow(aprilPruningController, 'April Pruning', pastingController, 'Pasting', isDark),
-        _buildTwoFieldRow(failFutRemovalController, 'Fail Fut Removal', firstFailFutRemovalController, '1st Fail Fut Rem', isDark),
-        _buildTwoFieldRow(secondFailFutRemovalController, '2nd Fail Fut Rem', bagalBaliFutRemovalController, 'Bagal Bali Fut', isDark),
-        _buildTwoFieldRow(firstDippingController, '1st Dipping', secondDippingController, '2nd Dipping', isDark),
-        _buildTwoFieldRow(thirdDippingController, '3rd Dipping', shootTyingController, 'Shoot Tying', isDark),
-        _buildTwoFieldRow(shootTyingStringsController, 'Shoot Tying (Strings)', shootTyingClipsController, 'Shoot Tying (Clips)', isDark),
-        _buildTwoFieldRow(bunchThinningController, 'Bunch Thinning', fingerThinningController, 'Finger Thinning', isDark),
-        _buildTwoFieldRow(berryThinningController, 'Berry Thinning', bunchSelectionController, 'Bunch Selection', isDark),
-        _buildTwoFieldRow(bunchTyingController, 'Bunch Tying', bunchVariationController, 'Bunch Variation', isDark),
-        _buildTwoFieldRow(shendaToppingController, 'Shenda Topping', paperWrappingController, 'Paper Wrapping', isDark),
-        _buildTwoFieldRow(paperRemovalController, 'Paper Removal', harvestingController, 'Harvesting', isDark),
-        _buildTwoFieldRow(newPlantationController, 'New Plantation', otherRateController, 'Other', isDark),
-      ],
-    );
+  // ═══════════════════════════════════════════════════════════════
+  // UPDATED: _buildRateCardGrid now accepts lang and uses AppStrings
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildRateCardGrid(bool isDark, String lang) {
+    return Column(children: [
+      _buildTwoFieldRow(defaultRateController, AppStrings.get('rc_default_rate', lang), pruningController, AppStrings.get('rc_pruning', lang), isDark),
+      _buildTwoFieldRow(aprilPruningController, AppStrings.get('rc_april_pruning', lang), pastingController, AppStrings.get('rc_pasting', lang), isDark),
+      _buildTwoFieldRow(failFutRemovalController, AppStrings.get('rc_fail_fut_removal', lang), firstFailFutRemovalController, AppStrings.get('rc_1st_fail_fut_rem', lang), isDark),
+      _buildTwoFieldRow(secondFailFutRemovalController, AppStrings.get('rc_2nd_fail_fut_rem', lang), bagalBaliFutRemovalController, AppStrings.get('rc_bagal_bali_fut', lang), isDark),
+      _buildTwoFieldRow(firstDippingController, AppStrings.get('rc_1st_dipping', lang), secondDippingController, AppStrings.get('rc_2nd_dipping', lang), isDark),
+      _buildTwoFieldRow(thirdDippingController, AppStrings.get('rc_3rd_dipping', lang), shootTyingController, AppStrings.get('rc_shoot_tying', lang), isDark),
+      _buildTwoFieldRow(shootTyingStringsController, AppStrings.get('rc_shoot_tying_strings', lang), shootTyingClipsController, AppStrings.get('rc_shoot_tying_clips', lang), isDark),
+      _buildTwoFieldRow(bunchThinningController, AppStrings.get('rc_bunch_thinning', lang), fingerThinningController, AppStrings.get('rc_finger_thinning', lang), isDark),
+      _buildTwoFieldRow(berryThinningController, AppStrings.get('rc_berry_thinning', lang), bunchSelectionController, AppStrings.get('rc_bunch_selection', lang), isDark),
+      _buildTwoFieldRow(bunchTyingController, AppStrings.get('rc_bunch_tying', lang), bunchVariationController, AppStrings.get('rc_bunch_variation', lang), isDark),
+      _buildTwoFieldRow(shendaToppingController, AppStrings.get('rc_shenda_topping', lang), paperWrappingController, AppStrings.get('rc_paper_wrapping', lang), isDark),
+      _buildTwoFieldRow(paperRemovalController, AppStrings.get('rc_paper_removal', lang), harvestingController, AppStrings.get('rc_harvesting', lang), isDark),
+      _buildTwoFieldRow(newPlantationController, AppStrings.get('rc_new_plantation', lang), otherRateController, AppStrings.get('rc_other', lang), isDark),
+    ]);
   }
 
-  Widget _buildTwoFieldRow(
-      TextEditingController c1,
-      String l1,
-      TextEditingController c2,
-      String l2,
-      bool isDark,
-      ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: _buildRateField(c1, l1, isDark)),
-          const SizedBox(width: 12),
-          Expanded(child: _buildRateField(c2, l2, isDark)),
-        ],
-      ),
-    );
+  Widget _buildTwoFieldRow(TextEditingController c1, String l1, TextEditingController c2, String l2, bool isDark) {
+    return Padding(padding: const EdgeInsets.only(bottom: 12.0), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: _buildRateField(c1, l1, isDark)), const SizedBox(width: 12), Expanded(child: _buildRateField(c2, l2, isDark))]));
   }
 
   Widget _buildRateField(TextEditingController controller, String label, bool isDark) {
     return TextFormField(
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-      ],
+      controller: controller, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
       style: GoogleFonts.inter(fontSize: 14, color: isDark ? Colors.white : _textPrimary),
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : _textSecondary),
+        labelText: label, labelStyle: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : _textSecondary),
         prefixIcon: const Icon(Icons.currency_rupee, size: 16, color: _primaryColor),
-        filled: true,
-        fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _accentColor, width: 1.5),
-        ),
+        filled: true, fillColor: isDark ? const Color(0xFF0F172A) : _dividerColor,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : _borderColor)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _accentColor, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
   }
 
-  Widget _buildSubmitButton(bool isDark) {
+  Widget _buildSubmitButton(bool isDark, String lang) {
     return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [_primaryColor, _accentColor],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: _primaryColor.withOpacity(0.3),
-            spreadRadius: 0,
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      width: double.infinity, height: 56,
+      decoration: BoxDecoration(gradient: const LinearGradient(colors: [_primaryColor, _accentColor], begin: Alignment.centerLeft, end: Alignment.centerRight), borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: _primaryColor.withOpacity(0.3), spreadRadius: 0, blurRadius: 12, offset: const Offset(0, 4))]),
       child: ElevatedButton(
         onPressed: _isLoadingLocations ? null : _submitQuickForm,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          disabledBackgroundColor: Colors.grey[400],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle_outline, size: 24),
-            const SizedBox(width: 12),
-            Text(
-              'Register Mukkadam',
-              style: GoogleFonts.inter(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), disabledBackgroundColor: Colors.grey[400]),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.check_circle_outline, size: 24), const SizedBox(width: 12),
+          Text(AppStrings.get('register_mukkadam', lang), style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+        ]),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(bool isDark) {
+  PreferredSizeWidget _buildAppBar(bool isDark, String lang) {
     return AppBar(
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Registration',
-            style: GoogleFonts.inter(
-              fontSize: 19,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: -0.3,
-            ),
-          ),
-          Text(
-            'मुक्कादम नोंदणी',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-      centerTitle: false,
-      backgroundColor: _primaryColor,
-      elevation: 0,
+      title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(AppStrings.get('quick_registration_title', lang), style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.3)),
+        Text(AppStrings.get('quick_registration_subtitle', lang), style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w600)),
+      ]),
+      centerTitle: false, backgroundColor: _primaryColor, elevation: 0,
       iconTheme: const IconThemeData(color: Colors.white),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_rounded, size: 22, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: IconButton(icon: const Icon(Icons.arrow_back_rounded, size: 22, color: Colors.white), onPressed: () => Navigator.pop(context)),
     );
   }
 }
 
-// ── Helper: Uppercase Text Formatter for Voter ID / PAN ──
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    return TextEditingValue(
-      text: newValue.text.toUpperCase(),
-      selection: newValue.selection,
-    );
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(text: newValue.text.toUpperCase(), selection: newValue.selection);
   }
 }

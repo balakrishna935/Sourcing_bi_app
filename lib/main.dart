@@ -5,74 +5,35 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart'; // Added image_picker import
+import 'package:image_picker/image_picker.dart';
 import 'package:mukadam_bi/firebase_message.dart';
 import 'package:mukadam_bi/firebase_options.dart';
+import 'package:mukadam_bi/provider/language_provider.dart';
 import 'package:mukadam_bi/splash_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'l10n/app_localizations.dart';
-import 'locale_provider.dart';
 import 'mukadam_Screen.dart';
 import 'mukadan/authentication/auth_service/auth_service.dart';
 import 'mukadan/authentication/userProvider.dart';
-import 'mukadan/registration/mukadam_registration_Screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
- await  Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  //await FirebaseMsg().initFCM();
-
-  // 1. REQUEST NOTIFICATION PERMISSION (Required for Android 13+)
-  // if (await Permission.notification.isDenied) {
-  //   await Permission.notification.request();
-  // }
-  //
-  // await Permission.location.request();
-  // await Permission.locationAlways.request();
   await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
-
-  // Enable debug logging for Android
-
-
 
   await FirebaseAnalytics.instance.logAppOpen();
 
-  //FirebaseAnalytics analytics = FirebaseAnalytics.instance;
-
-  // Set default collection to true
-  // await analytics.setAnalyticsCollectionEnabled(true);
-  //
-  // await analytics.logAppOpen();
-
-
-
-
-
-  Map<Permission, PermissionStatus> statuses=await [
+  Map<Permission, PermissionStatus> statuses = await [
     Permission.location,
     Permission.notification,
-
   ].request();
 
-  // if (statuses[Permission.locationAlways]!.isGranted) {
-  // //  await Future.delayed(const Duration(milliseconds: 500));
-  //
-  //   await initializeService();
-  // }
-
-  //await initializeService();
-
   await OtpApiService.init();
-
-
-
 
   print('--- APP STARTUP ---');
   if (OtpApiService.sessionToken != null) {
@@ -83,7 +44,7 @@ void main() async {
   print('-------------------');
 
   final userProvider = UserProvider();
-  await userProvider.loadSavedUser(); // Load the user from storage
+  await userProvider.loadSavedUser();
 
   if (userProvider.user != null) {
     print('Logged in User ID: ${userProvider.user!.id}');
@@ -92,21 +53,11 @@ void main() async {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('bg_user_id', userProvider.user!.id);
-
-
-
-
-    //await FirebaseMsg().initFCM(userProvider.user!.id.toString(), userProvider.user!.mobileNumber.toString());
-
-
-
-      } else {
+  } else {
     print('No user data found in provider.');
   }
 
   await dotenv.load(fileName: ".env");
-
-  // 2. Initialize Auth Service to load the session token from SharedPreferences
 
   try {
     await FirebaseAnalytics.instance.logEvent(
@@ -119,81 +70,47 @@ void main() async {
     print(e.toString());
   }
 
-
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: userProvider),
-        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()..loadLanguage()),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
-
-
-
-
-
-
 }
-
-
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LocaleProvider>(       // <-- wrap with Consumer
-      builder: (context, localeProvider, child) {
-        return MaterialApp(
-          title: 'Mukkadam Registration',
-
-          // ADD these 3 properties:
-          locale: localeProvider.locale,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('en'),
-            Locale('mr'),
-
-          ],
-
-          theme: ThemeData(
-            primarySwatch: Colors.blue,
-            visualDensity: VisualDensity.adaptivePlatformDensity,
-          ),
-          debugShowCheckedModeBanner: false,
-          home: const SplashScreen(),
-          navigatorObservers: [
-            FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance)
-          ],
-        );
-      },
+    return MaterialApp(
+      title: 'Mukkadam Registration',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      debugShowCheckedModeBanner: false,
+      home: const SplashScreen(),
+      navigatorObservers: [
+        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance)
+      ],
     );
   }
 }
-
-
-
 
 // Made this public so it can be imported into mukadam_registration_Screen.dart
 Future<Position> determinePosition() async {
   bool serviceEnabled;
   LocationPermission permission;
 
-  // 1. Check if location services are enabled.
   serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
     return Future.error('Location services are disabled.');
   }
 
-  // 2. Check/Request Permissions
   permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
@@ -206,7 +123,6 @@ Future<Position> determinePosition() async {
     return Future.error('Location permissions are permanently denied.');
   }
 
-  // 3. Get the current location
   return await Geolocator.getCurrentPosition();
 }
 
@@ -286,10 +202,7 @@ class LocationCaptureSection extends StatelessWidget {
   }
 }
 
-
-
 Future<void> requestPermissionsAndStartService() async {
-  // 1. Specifically request Notifications first
   PermissionStatus nStatus = await Permission.notification.request();
 
   if (!nStatus.isGranted) {
@@ -297,16 +210,10 @@ Future<void> requestPermissionsAndStartService() async {
     return;
   }
 
-  // 2. Request Location
   PermissionStatus lStatus = await Permission.location.request();
 
   if (lStatus.isGranted) {
-    // 3. Request Always Location
     await Permission.locationAlways.request();
-
-    // 4. CRITICAL: Add a 2-second delay for the OS to register permissions
     await Future.delayed(const Duration(seconds: 2));
   }
 }
-
-

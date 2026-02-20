@@ -323,7 +323,7 @@ class _MukkadamRegistrationScreenState extends State<MukkadamRegistrationScreen>
       };
 
       // 2. Call the RegistrationService
-      final String s3AuthToken = 'e8fa8310c9af344ca22ec6bd23960d609b09c704';
+     
 
       final response = await RegistrationService().registerMukkadam(
         mukkadamData: mukkadamData,
